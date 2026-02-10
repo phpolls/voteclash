@@ -40,62 +40,61 @@ export default function HomeClient({
   if (!hydrated) return null
 
   return (
-    <main className="h-screen bg-transparent">
-      <div className="mx-auto h-full max-w-[1600px] px-6 py-6">
-        <div
-          className={[
-            'h-full grid gap-10 items-start',
-            showCreators ? 'grid-cols-1 lg:grid-cols-[230px_1fr_230px]' : 'grid-cols-1',
-          ].join(' ')}
-        >
+    <main className="min-h-screen bg-transparent overflow-x-auto">
+      <div className="mx-auto min-h-screen max-w-[1600px] px-6 py-6 min-w-[1200px]">
+        <div className="min-h-screen grid gap-10 items-start grid-cols-[230px_1fr_230px]">
           {/* LEFT: flush top */}
-          {showCreators ? (
-            <div className="h-full min-h-0 flex flex-col gap-6">
-              <div className="flex-shrink-0">
-                <LeaderboardSidebar
-                  title="Presidentiables Ranking"
-                  items={presidentiablesTop.map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    imgUrl: p.imgUrl ?? null,
-                    votes: p.votes,
-                  }))}
-                  limit={20}
-                />
-              </div>
-
-              {/* CHAT: fills remaining height */}
-              <div className="flex-1 min-h-0 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col">
+          <div className="min-h-0 flex flex-col gap-6">
+            {showCreators ? (
+              <>
                 <div className="flex-shrink-0">
-                  <div className="text-white font-extrabold tracking-tight">CHAT WARS</div>
-                  <div className="mt-1 text-white/60 text-xs">
-                    Realtime trash talk (placeholder)
+                  <LeaderboardSidebar
+                    title="Presidentiables Ranking"
+                    items={presidentiablesTop.map((p) => ({
+                      id: p.id,
+                      name: p.name,
+                      imgUrl: p.imgUrl ?? null,
+                      votes: p.votes,
+                    }))}
+                    limit={20}
+                  />
+                </div>
+
+                {/* CHAT: fills remaining height */}
+                <div className="flex-1 min-h-0 rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col">
+                  <div className="flex-shrink-0">
+                    <div className="text-white font-extrabold tracking-tight">CHAT WARS</div>
+                    <div className="mt-1 text-white/60 text-xs">
+                      Realtime trash talk (placeholder)
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3">
+                    <div className="text-white/35 text-xs">No messages yet.</div>
+                  </div>
+
+                  <div className="mt-3 flex-shrink-0 flex items-center gap-2">
+                    <input
+                      className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
+                      placeholder="Type your message…"
+                      disabled
+                    />
+                    <button
+                      className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
+                      disabled
+                    >
+                      Send
+                    </button>
                   </div>
                 </div>
-
-                <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <div className="text-white/35 text-xs">No messages yet.</div>
-                </div>
-
-                <div className="mt-3 flex-shrink-0 flex items-center gap-2">
-                  <input
-                    className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
-                    placeholder="Type your message…"
-                    disabled
-                  />
-                  <button
-                    className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
-                    disabled
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
+              </>
+            ) : (
+              <div className="flex-1 min-h-0" />
+            )}
+          </div>
 
           {/* CENTER: title + ads ONLY above voting */}
-          <div className="h-full min-h-0 flex flex-col gap-6">
+          <div className="min-h-0 flex flex-col gap-6">
             <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-5 shadow-lg backdrop-blur">
               <div className="flex items-center gap-6">
                 <div className="flex-[2] min-w-0">
@@ -125,8 +124,8 @@ export default function HomeClient({
           </div>
 
           {/* RIGHT: flush top */}
-          {showCreators ? (
-            <div className="h-full min-h-0 flex flex-col gap-6">
+          <div className="min-h-0 flex flex-col gap-6">
+            {showCreators ? (
               <div className="flex-shrink-0">
                 <LeaderboardSidebar
                   title="Creators Ranking"
@@ -139,10 +138,10 @@ export default function HomeClient({
                   limit={20}
                 />
               </div>
+            ) : null}
 
-              <div className="flex-1 min-h-0" />
-            </div>
-          ) : null}
+            <div className="flex-1 min-h-0" />
+          </div>
         </div>
       </div>
     </main>
