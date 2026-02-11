@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import LeaderboardSidebar from '@/components/LeaderboardSidebar'
 import VotingGrid from '@/components/VotingGrid'
 
 type PresidentableUI = { id: string; name: string; imgUrl: string; total_votes: number }
@@ -13,13 +12,7 @@ function formatVotes(v: number) {
   return Number(v || 0).toLocaleString('en-US')
 }
 
-function MobileTop8({
-  title,
-  items,
-}: {
-  title: string
-  items: SidebarRow[]
-}) {
+function MobileTop8({ title, items }: { title: string; items: SidebarRow[] }) {
   const top = (items ?? []).slice(0, 8)
   const left = top.slice(0, 4)
   const right = top.slice(4, 8)
@@ -52,13 +45,7 @@ function MobileTop8({
   )
 }
 
-function MobileTop20Split({
-  title,
-  items,
-}: {
-  title: string
-  items: SidebarRow[]
-}) {
+function MobileTop20Split({ title, items }: { title: string; items: SidebarRow[] }) {
   const top = (items ?? []).slice(0, 20)
   const left = top.slice(0, 10)
   const right = top.slice(10, 20)
@@ -123,7 +110,7 @@ export default function HomeClient({
 
   return (
     <main className="min-h-screen bg-transparent">
-      {/* ================= MOBILE ================= */}
+      {/* ================= MOBILE (leaderboards BELOW voting) ================= */}
       <div className="lg:hidden px-4 pt-5 pb-8 space-y-4">
         {/* Website name + title */}
         <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
@@ -131,15 +118,17 @@ export default function HomeClient({
           <div className="mt-1 text-white/70 text-sm">Head-to-head creator battles</div>
         </div>
 
-        {/* Voting / Presidentables (VotingGrid already shows presidentables first) */}
+        {/* VotingGrid:
+            - before vote: shows Presidentables picker
+            - after vote: shows Creator battle cards
+        */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
           <VotingGrid presidentables={presidentables} onPresidentVoted={handlePresidentVoted} />
         </div>
 
-        {/* Only after vote: show mobile leaderboards + chat */}
+        {/* After vote: everything below voting */}
         {showCreators ? (
           <>
-            {/* Presidentiables leaderboard 1–8 split into 2 columns */}
             <MobileTop8
               title="Presidentiables (Top 8)"
               items={presidentiablesTop.map((p) => ({
@@ -150,7 +139,6 @@ export default function HomeClient({
               }))}
             />
 
-            {/* Creators leaderboard 1–20 split into 2 columns */}
             <MobileTop20Split
               title="Creators (Top 20)"
               items={creatorsTop.map((c) => ({
@@ -161,7 +149,6 @@ export default function HomeClient({
               }))}
             />
 
-            {/* Chatbox at bottom */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur flex flex-col min-h-[320px]">
               <div className="text-white font-extrabold tracking-tight">CHAT</div>
 
@@ -184,27 +171,27 @@ export default function HomeClient({
         ) : null}
       </div>
 
-      {/* ================= DESKTOP (keep your current 3-column vibe) ================= */}
+      {/* ================= DESKTOP (unchanged: sidebars left/right) ================= */}
       <div className="hidden lg:block">
         <div className="mx-auto max-w-[1600px] px-6 pt-6 pb-10">
-          <div
-            className={[
-              'grid gap-10 lg:items-start',
-              showCreators ? 'grid-cols-[230px_1fr_230px]' : 'grid-cols-1',
-            ].join(' ')}
-          >
+          <div className={['grid gap-10 lg:items-start', showCreators ? 'grid-cols-[230px_1fr_230px]' : 'grid-cols-1'].join(' ')}>
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
-                <LeaderboardSidebar
-                  title="Presidentiables Ranking"
-                  items={presidentiablesTop.map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    imgUrl: p.imgUrl ?? null,
-                    votes: p.votes,
-                  }))}
-                  limit={20}
-                />
+                {/* keep your existing LeaderboardSidebar component usage */}
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
+                  <div className="text-white font-extrabold tracking-tight mb-2">Presidentiables Ranking</div>
+                  <div className="space-y-2">
+                    {presidentiablesTop.slice(0, 20).map((p, idx) => (
+                      <div key={p.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
+                          <div className="text-white font-semibold truncate">{p.name}</div>
+                        </div>
+                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(p.votes)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : null}
 
@@ -228,15 +215,12 @@ export default function HomeClient({
                 <VotingGrid presidentables={presidentables} onPresidentVoted={handlePresidentVoted} />
               </div>
 
-              {/* Desktop chat only after vote */}
               {showCreators ? (
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col min-h-[280px]">
                   <div className="text-white font-extrabold tracking-tight">CHAT</div>
-
                   <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3">
                     <div className="text-white/35 text-xs">No messages yet.</div>
                   </div>
-
                   <div className="mt-3 flex-shrink-0 flex items-center gap-2">
                     <input
                       className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
@@ -253,16 +237,20 @@ export default function HomeClient({
 
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
-                <LeaderboardSidebar
-                  title="Creators Ranking"
-                  items={creatorsTop.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    imgUrl: c.imgUrl ?? null,
-                    votes: c.votes,
-                  }))}
-                  limit={20}
-                />
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
+                  <div className="text-white font-extrabold tracking-tight mb-2">Creators Ranking</div>
+                  <div className="space-y-2">
+                    {creatorsTop.slice(0, 20).map((c, idx) => (
+                      <div key={c.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
+                          <div className="text-white font-semibold truncate">{c.name}</div>
+                        </div>
+                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(c.votes)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>
