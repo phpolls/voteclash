@@ -51,7 +51,7 @@ const supabase = createClient(supabaseUrl, anonKey)
 const BUCKET = 'cards'
 const LS_PRES_KEY = 'voteclash_pres_voted'
 
-// ✅ Hardcoded age/role (so you never encode these in Supabase)
+// ✅ Hardcoded age/role
 const PRES_META: Record<string, { age: number; role: string }> = {
   'duterte-sara': { age: 47, role: 'Vice President of the Philippines' },
   'hontiveros-risa': { age: 59, role: 'Senator of the Philippines' },
@@ -61,7 +61,6 @@ const PRES_META: Record<string, { age: number; role: string }> = {
   'robredo-leni': { age: 60, role: 'Mayor, Naga City' },
   'romualdez-martin': { age: 62, role: 'Former Speaker of the House' },
   'tulfo-raffy': { age: 65, role: 'Senator of the Philippines' },
-
   'jonvic-remulla': { age: 58, role: 'Secretary of the Interior and Local Government' },
 }
 
@@ -129,16 +128,10 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
   )
 }
 
-/**
- * Auto-fit quote text to a fixed-height box.
- * - short quotes: scale up
- * - long quotes: shrink until it fits (no ellipsis)
- * - if it can't fit even at min: enable scroll (still no ellipsis)
- */
 function AutoFitQuote({
   text,
-  maxPx = 26,
-  minPx = 10,
+  maxPx = 22,
+  minPx = 12,
 }: {
   text: string
   maxPx?: number
@@ -155,10 +148,8 @@ function AutoFitQuote({
     const p = pRef.current
     if (!box || !p) return
 
-    const SAFE_PX = 10 // bigger buffer prevents half-letter clipping
+    const SAFE_PX = 10
     setScrollable(false)
-
-    // stable line height prevents weird rounding differences
     p.style.lineHeight = '1.25'
 
     const fitsAt = (px: number) => {
@@ -183,7 +174,6 @@ function AutoFitQuote({
     }
 
     best = Math.max(minPx, best - 1)
-
     p.style.fontSize = `${best}px`
     setFontPx(best)
 
@@ -202,7 +192,7 @@ function AutoFitQuote({
     <div
       ref={boxRef}
       className={[
-        'mt-3 px-5 py-4 rounded-2xl bg-black/30 border border-white/10 h-[150px] md:h-[178px]',
+        'mt-2 px-4 py-3 rounded-2xl bg-black/30 border border-white/10 h-[96px] sm:h-[120px] md:h-[178px]',
         scrollable ? 'overflow-auto' : 'overflow-hidden',
       ].join(' ')}
     >
@@ -220,18 +210,18 @@ function AutoFitQuote({
 function QuoteBlock({ quote }: { quote: string | null }) {
   if (!quote) {
     return (
-      <div className="mt-3 px-5 py-4 rounded-2xl bg-black/30 border border-white/10 h-[150px] md:h-[178px] flex items-start overflow-hidden">
+      <div className="mt-2 px-4 py-3 rounded-2xl bg-black/30 border border-white/10 h-[96px] sm:h-[120px] md:h-[178px] flex items-start overflow-hidden">
         <p className="m-0 text-white/40 text-sm text-left">No quote yet.</p>
       </div>
     )
   }
 
-  return <AutoFitQuote text={quote} maxPx={26} minPx={10} />
+  return <AutoFitQuote text={quote} maxPx={22} minPx={12} />
 }
 
 function VotesBadge({ votes }: { votes: number }) {
   return (
-    <div className="absolute top-4 right-4 z-30">
+    <div className="absolute top-3 right-3 z-30">
       <div className="rounded-2xl bg-black/45 border border-white/10 px-3 py-2 text-center backdrop-blur">
         <div className="text-[10px] text-white/60 tracking-[0.35em] uppercase">Votes</div>
         <div className="text-white text-lg font-extrabold tabular-nums leading-none mt-1 whitespace-nowrap text-right">
@@ -244,16 +234,15 @@ function VotesBadge({ votes }: { votes: number }) {
 
 function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; voting: boolean }) {
   return (
-    // ✅ MOBILE ONLY: less tall; DESKTOP stays exactly h-[520px]
-    <div className="relative h-[420px] sm:h-[520px] lg:h-[520px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
+    <div className="relative h-[320px] sm:h-[420px] lg:h-[520px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
       <Media src={c.imgUrl} alt={c.name} />
       <VotesBadge votes={c.total_votes} />
 
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
 
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 pt-40">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 pt-24">
         <h2
-          className="mt-30 text-lg md:text-xl font-extrabold text-white tracking-tight leading-tight whitespace-normal break-words pr-16"
+          className="text-[16px] sm:text-lg md:text-xl font-extrabold text-white tracking-tight leading-tight pr-16 whitespace-normal break-normal"
           style={{
             textShadow:
               '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000',
@@ -262,13 +251,12 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
           {c.name}
         </h2>
 
-        {/* DO NOT TOUCH QUOTES */}
         <QuoteBlock quote={c.quote} />
 
         <button
           disabled={voting}
           onClick={onVote}
-          className="mt-3 w-full py-4 rounded-2xl bg-white text-black font-extrabold tracking-wide hover:bg-neutral-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-2 w-full py-3 rounded-2xl bg-white text-black font-extrabold tracking-wide hover:bg-neutral-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {voting ? 'VOTING...' : 'VOTE'}
         </button>
@@ -310,17 +298,16 @@ function Presidentables({
   }, [presidentables])
 
   return (
-    <section className="mb-6">
-      <div className="mb-3 flex items-end justify-between gap-3">
+    <section className="mb-2">
+      <div className="mb-2 flex items-end justify-between gap-3">
         <div>
-          <div className="text-xl font-semibold tracking-tight text-neutral-900">Presidentables</div>
-          <div className="text-sm text-neutral-500">Pick ONE candidate</div>
+          <div className="text-lg font-semibold tracking-tight text-neutral-900">Presidentables</div>
+          <div className="text-xs text-neutral-500">Pick ONE candidate</div>
         </div>
-
-        {selectedId ? <div className="text-sm text-neutral-500">Selected</div> : <div className="text-sm text-neutral-400">One vote only</div>}
+        {selectedId ? <div className="text-xs text-neutral-500">Selected</div> : <div className="text-xs text-neutral-400">One vote only</div>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
@@ -334,21 +321,22 @@ function Presidentables({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
                 isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
                 pending ? 'opacity-80' : 'hover:bg-neutral-50',
+                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-[290px]',
               ].join(' ')}
-              style={{ height: 290, minWidth: 0 }}
+              style={{ minWidth: 0 }}
             >
               <div className="absolute inset-0">
                 <img
                   src={safeImg(p.imgUrl)}
                   alt={p.name}
-                  // ✅ Face-safe crop (no desktop layout change)
-                  className="h-full w-full object-cover object-top"
                   draggable={false}
+                  // ✅ NO FACE CUT: contain on mobile, cover on desktop
+                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-top"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = safeImg()
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-black/5" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />
               </div>
 
               {!pending ? (
@@ -357,12 +345,12 @@ function Presidentables({
                 </div>
               ) : null}
 
-              <div className="relative flex h-full flex-col justify-end p-4">
-                <div className="text-[18px] font-semibold leading-tight text-white">
+              <div className="relative flex h-full flex-col justify-end p-3">
+                <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
                   {p.name}, {p.age}
                 </div>
-                <div className="mt-1 text-sm leading-snug text-white/70">
-                  <div className="line-clamp-2">{p.role}</div>
+                <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
+                  <div className="line-clamp-1 sm:line-clamp-2">{p.role}</div>
                 </div>
               </div>
             </button>
@@ -502,7 +490,12 @@ export default function VotingGrid({
   if (!presVoteDone) {
     return (
       <div className="w-full">
-        <Presidentables presidentables={presidentables} onPick={pickPresident} pending={presVotePending} selectedId={selectedPresidentId} />
+        <Presidentables
+          presidentables={presidentables}
+          onPick={pickPresident}
+          pending={presVotePending}
+          selectedId={selectedPresidentId}
+        />
       </div>
     )
   }
@@ -513,16 +506,29 @@ export default function VotingGrid({
 
   return (
     <div className="relative" id="creator-battles">
-      {/* ✅ MOBILE = 2 columns; DESKTOP stays 2 columns */}
-      <div className="grid grid-cols-2 gap-3 lg:gap-8">
+      {/* ✅ MOBILE = vertical (A then VS then B). DESKTOP unchanged. */}
+      <div className="lg:hidden space-y-3">
         <CreatorCard c={left} voting={voting} onVote={() => voteCreator(left.id)} />
+
+        <div className="flex justify-center">
+          <div className="rounded-full border border-white/10 bg-white/10 px-6 py-2">
+            <div className="text-white font-extrabold tracking-[0.45em] text-sm">VS</div>
+          </div>
+        </div>
+
         <CreatorCard c={right} voting={voting} onVote={() => voteCreator(right.id)} />
       </div>
 
-      {/* VS bigger */}
-      <div className="pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
-        <div className="rounded-full border border-black/10 bg-white px-7 py-3.5 shadow-md">
-          <div className="text-black font-extrabold tracking-[0.45em] text-lg">VS</div>
+      <div className="hidden lg:block">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <CreatorCard c={left} voting={voting} onVote={() => voteCreator(left.id)} />
+          <CreatorCard c={right} voting={voting} onVote={() => voteCreator(right.id)} />
+        </div>
+
+        <div className="pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 hidden lg:flex">
+          <div className="rounded-full border border-black/10 bg-white px-7 py-3.5 shadow-md">
+            <div className="text-black font-extrabold tracking-[0.45em] text-lg">VS</div>
+          </div>
         </div>
       </div>
     </div>

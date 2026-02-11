@@ -1,11 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
-
-const LS_KEY = 'voteclash_pres_voted'
 
 function formatVotes(v: number) {
   return Number(v || 0).toLocaleString('en-US')
@@ -85,48 +82,25 @@ export default function LeaderboardsClient({
   presidentiablesTop: SidebarRow[]
 }) {
   const [hydrated, setHydrated] = useState(false)
-  const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
     setHydrated(true)
-    try {
-      setAllowed(localStorage.getItem(LS_KEY) === '1')
-    } catch {
-      setAllowed(false)
-    }
   }, [])
 
   if (!hydrated) return null
 
-  // simple gate: vote first
-  if (!allowed) {
-    return (
-      <main className="min-h-screen bg-transparent">
-        <div className="px-4 pt-5 pb-8 space-y-4">
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
-            <div className="text-white font-extrabold text-2xl leading-none">VoteClash</div>
-            <div className="mt-2 text-white/70 text-sm">Vote first to unlock leaderboards.</div>
-          </div>
-
-          <Link href="/" className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold">
-            Back to Voting
-          </Link>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main className="min-h-screen bg-transparent">
-      <div className="px-4 pt-5 pb-8 space-y-4">
+      <div className="px-4 pt-4 pb-6 space-y-4">
         <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
           <div className="text-white font-extrabold text-2xl leading-none">VoteClash</div>
-          <div className="mt-1 text-white/70 text-sm">Leaderboards</div>
+          <div className="mt-1 text-white/70 text-sm">Results</div>
         </div>
 
         <MobileTop8 title="Presidentiables (Top 8)" items={presidentiablesTop} />
         <MobileTop20Split title="Creators (Top 20)" items={creatorsTop} />
 
+        {/* Chatbox (only here) */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur flex flex-col min-h-[320px]">
           <div className="text-white font-extrabold tracking-tight">CHAT</div>
 
@@ -146,9 +120,12 @@ export default function LeaderboardsClient({
           </div>
         </div>
 
-        <Link href="/" className="block w-full text-center py-4 rounded-2xl bg-white/10 text-white font-extrabold border border-white/10">
+        <a
+          href="/"
+          className="block w-full text-center py-4 rounded-2xl bg-white/10 text-white font-extrabold border border-white/10"
+        >
           Back to Voting
-        </Link>
+        </a>
       </div>
     </main>
   )
