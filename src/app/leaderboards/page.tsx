@@ -1,8 +1,7 @@
-import HomeClient from './HomeClient'
+import LeaderboardsClient from './LeaderboardsClient'
 import { db } from '@/lib/db'
 
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
-type PresidentableUI = { id: string; name: string; imgUrl: string; total_votes: number }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
 const BUCKET = 'cards'
@@ -14,7 +13,7 @@ function toPublicUrl(path?: string | null) {
   return `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${p}`
 }
 
-export default async function HomePage() {
+export default async function LeaderboardsPage() {
   // Creators leaderboard (Top 20)
   let creatorsTop: SidebarRow[] = []
   try {
@@ -35,27 +34,6 @@ export default async function HomePage() {
       })) ?? []
   } catch {
     creatorsTop = []
-  }
-
-  // Presidentiables list for homepage cards (photos, sorted by name)
-  let presidentables: PresidentableUI[] = []
-  try {
-    const { data, error } = await db
-      .from('Presidentiables')
-      .select('id,name,imgUrl,total_votes')
-      .order('name', { ascending: true })
-
-    if (error) throw error
-
-    presidentables =
-      data?.map((p: any) => ({
-        id: String(p.id),
-        name: String(p.name ?? ''),
-        imgUrl: String(p.imgUrl ?? ''),
-        total_votes: Number(p.total_votes ?? 0),
-      })) ?? []
-  } catch {
-    presidentables = []
   }
 
   // Presidentiables leaderboard (Top 20)
@@ -80,11 +58,5 @@ export default async function HomePage() {
     presidentiablesTop = []
   }
 
-  return (
-    <HomeClient
-      presidentables={presidentables}
-      creatorsTop={creatorsTop}
-      presidentiablesTop={presidentiablesTop}
-    />
-  )
+  return <LeaderboardsClient creatorsTop={creatorsTop} presidentiablesTop={presidentiablesTop} />
 }

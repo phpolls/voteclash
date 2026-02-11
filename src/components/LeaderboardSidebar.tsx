@@ -27,10 +27,18 @@ function Row({
     <div className="flex items-center gap-2 px-2 py-1 text-[11px]">
       <div className="w-5 text-center font-bold text-neutral-900">{rank}</div>
 
-      <img src={safeImg(imgUrl)} className="h-6 w-6 rounded-lg object-cover" alt="" />
+      <img
+        src={safeImg(imgUrl)}
+        className="h-6 w-6 rounded-lg object-cover"
+        alt=""
+      />
 
-      <div className="flex-1 font-semibold whitespace-nowrap text-neutral-900">{name}</div>
+      {/* FULL NAME — NO CUT */}
+      <div className="flex-1 font-semibold whitespace-nowrap text-neutral-900">
+        {name}
+      </div>
 
+      {/* votes bold + commas */}
       <div className="text-neutral-700 font-semibold tabular-nums whitespace-nowrap">
         {Number(votes).toLocaleString('en-US')}
       </div>
@@ -42,28 +50,35 @@ export default function LeaderboardSidebar({
   title,
   items,
   limit = 20,
-  className = '',
 }: {
   title: string
   items: Item[]
   limit?: number
-  className?: string
 }) {
   const list = (items ?? []).slice(0, limit)
 
   return (
-    <aside className={['rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm flex flex-col min-h-0', className].join(' ')}>
-      <div className="mb-3 flex-shrink-0">
-        <div className="text-xs font-extrabold tracking-tight text-neutral-900">{title}</div>
-        <div className="mt-0.5 text-[11px] text-neutral-500">Top {limit}</div>
+    <aside className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="mb-3">
+        <div className="text-xs font-extrabold tracking-tight text-neutral-900">
+          {title}
+        </div>
+        <div className="mt-0.5 text-[11px] text-neutral-500">
+          Top {limit}
+        </div>
       </div>
 
-      {/* KEY FIX: make this area take height and scroll */}
-      <div className="flex-1 min-h-0 overflow-auto pr-1">
+      <div className="max-h-[calc(100vh-220px)] overflow-auto pr-1">
         {list.length > 0 ? (
           <div className="space-y-2">
             {list.map((x, idx) => (
-              <Row key={x.id} rank={idx + 1} name={x.name} imgUrl={x.imgUrl ?? null} votes={x.votes} />
+              <Row
+                key={x.id}
+                rank={idx + 1}
+                name={x.name}
+                imgUrl={x.imgUrl ?? null}
+                votes={x.votes}
+              />
             ))}
           </div>
         ) : (
