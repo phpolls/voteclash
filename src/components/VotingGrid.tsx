@@ -350,7 +350,7 @@ function Presidentables({
                   {p.name}, {p.age}
                 </div>
                 <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
-                  <div className="line-clamp-1 sm:line-clamp-2">{p.role}</div>
+                  <div className="whitespace-normal break-words">{p.role}</div>
                 </div>
               </div>
             </button>

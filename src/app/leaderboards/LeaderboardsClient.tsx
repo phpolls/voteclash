@@ -8,67 +8,44 @@ function formatVotes(v: number) {
   return Number(v || 0).toLocaleString('en-US')
 }
 
-function MobileTop8({ title, items }: { title: string; items: SidebarRow[] }) {
-  const top = (items ?? []).slice(0, 8)
-  const left = top.slice(0, 4)
-  const right = top.slice(4, 8)
+function RankList({
+  title,
+  items,
+  limit,
+}: {
+  title: string
+  items: SidebarRow[]
+  limit: number
+}) {
+  const list = (items ?? []).slice(0, limit)
 
   return (
     <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
       <div className="text-white font-extrabold tracking-tight">{title}</div>
-      <div className="mt-2 grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          {left.map((x, i) => (
-            <div key={x.id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-              <div className="w-6 text-white/80 font-extrabold tabular-nums">{i + 1}</div>
-              <div className="flex-1 min-w-0 text-white font-semibold truncate">{x.name}</div>
-              <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(x.votes)}</div>
-            </div>
-          ))}
-        </div>
 
-        <div className="space-y-2">
-          {right.map((x, i) => (
-            <div key={x.id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-              <div className="w-6 text-white/80 font-extrabold tabular-nums">{i + 5}</div>
-              <div className="flex-1 min-w-0 text-white font-semibold truncate">{x.name}</div>
-              <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(x.votes)}</div>
+      <div className="mt-3 space-y-2">
+        {list.map((x, idx) => (
+          <div
+            key={x.id}
+            className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
+          >
+            <div className="w-7 text-white/80 font-extrabold tabular-nums leading-6">
+              {idx + 1}
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
 
-function MobileTop20Split({ title, items }: { title: string; items: SidebarRow[] }) {
-  const top = (items ?? []).slice(0, 20)
-  const left = top.slice(0, 10)
-  const right = top.slice(10, 20)
-
-  return (
-    <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-      <div className="text-white font-extrabold tracking-tight">{title}</div>
-      <div className="mt-2 grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          {left.map((x, i) => (
-            <div key={x.id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-              <div className="w-6 text-white/80 font-extrabold tabular-nums">{i + 1}</div>
-              <div className="flex-1 min-w-0 text-white font-semibold truncate">{x.name}</div>
-              <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(x.votes)}</div>
+            {/* Full name (NO ellipsis) */}
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-semibold text-[13px] leading-5 break-words whitespace-normal">
+                {x.name}
+              </div>
             </div>
-          ))}
-        </div>
 
-        <div className="space-y-2">
-          {right.map((x, i) => (
-            <div key={x.id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-              <div className="w-6 text-white/80 font-extrabold tabular-nums">{i + 11}</div>
-              <div className="flex-1 min-w-0 text-white font-semibold truncate">{x.name}</div>
-              <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(x.votes)}</div>
+            {/* Votes (will always fit, stays right) */}
+            <div className="text-white/80 font-extrabold tabular-nums whitespace-nowrap text-[12px] leading-6">
+              {formatVotes(x.votes)}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   )
@@ -97,8 +74,8 @@ export default function LeaderboardsClient({
           <div className="mt-1 text-white/70 text-sm">Results</div>
         </div>
 
-        <MobileTop8 title="Presidentiables (Top 8)" items={presidentiablesTop} />
-        <MobileTop20Split title="Creators (Top 20)" items={creatorsTop} />
+        <RankList title="Presidentiables (Top 8)" items={presidentiablesTop} limit={8} />
+        <RankList title="Creators (Top 20)" items={creatorsTop} limit={20} />
 
         {/* Chatbox (only here) */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur flex flex-col min-h-[320px]">
@@ -114,7 +91,10 @@ export default function LeaderboardsClient({
               placeholder="Type your message…"
               disabled
             />
-            <button className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60" disabled>
+            <button
+              className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
+              disabled
+            >
               Send
             </button>
           </div>
