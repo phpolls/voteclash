@@ -42,32 +42,28 @@ export default function LeaderboardSidebar({
   title,
   items,
   limit = 20,
+  className = '',
 }: {
   title: string
   items: Item[]
   limit?: number
+  className?: string
 }) {
   const list = (items ?? []).slice(0, limit)
 
   return (
-    <aside className="rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm flex flex-col">
+    <aside className={['rounded-3xl border border-neutral-200 bg-white p-4 shadow-sm flex flex-col min-h-0', className].join(' ')}>
       <div className="mb-3 flex-shrink-0">
         <div className="text-xs font-extrabold tracking-tight text-neutral-900">{title}</div>
         <div className="mt-0.5 text-[11px] text-neutral-500">Top {limit}</div>
       </div>
 
-      {/* No viewport math here; parent controls height */}
-      <div className="overflow-auto pr-1">
+      {/* KEY FIX: make this area take height and scroll */}
+      <div className="flex-1 min-h-0 overflow-auto pr-1">
         {list.length > 0 ? (
           <div className="space-y-2">
             {list.map((x, idx) => (
-              <Row
-                key={x.id}
-                rank={idx + 1}
-                name={x.name}
-                imgUrl={x.imgUrl ?? null}
-                votes={x.votes}
-              />
+              <Row key={x.id} rank={idx + 1} name={x.name} imgUrl={x.imgUrl ?? null} votes={x.votes} />
             ))}
           </div>
         ) : (

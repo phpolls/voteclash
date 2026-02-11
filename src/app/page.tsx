@@ -37,7 +37,7 @@ export default async function HomePage() {
     creatorsTop = []
   }
 
-  // Presidentiables list for homepage cards (photos, sorted by name)
+  // Presidentiables list for homepage cards
   let presidentables: PresidentableUI[] = []
   try {
     const { data, error } = await db
