@@ -66,14 +66,70 @@ const PRES_META: Record<string, { age: number; role: string }> = {
 }
 
 const DEFAULT_PRESIDENTABLES: PresidentableUI[] = [
-  { id: 'duterte-sara', name: 'Sara Duterte', age: 47, role: 'Vice President of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'hontiveros-risa', name: 'Risa Hontiveros', age: 59, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'pacquiao-manny', name: 'Manny Pacquiao', age: 47, role: 'Boxing Legend and Former Senator', imgUrl: '', total_votes: 0 },
-  { id: 'poe-grace', name: 'Grace Poe', age: 57, role: 'Former Senator of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'remulla-jonvic', name: 'Jonvic Remulla', age: 58, role: 'Secretary of the Interior and Local Government', imgUrl: '', total_votes: 0 },
-  { id: 'robredo-leni', name: 'Leni Robredo', age: 60, role: 'Mayor, Naga City', imgUrl: '', total_votes: 0 },
-  { id: 'romualdez-martin', name: 'Martin Romualdez', age: 62, role: 'Former Speaker of the House', imgUrl: '', total_votes: 0 },
-  { id: 'tulfo-raffy', name: 'Raffy Tulfo', age: 65, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
+  {
+    id: 'duterte-sara',
+    name: 'Sara Duterte',
+    age: 47,
+    role: 'Vice President of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'hontiveros-risa',
+    name: 'Risa Hontiveros',
+    age: 59,
+    role: 'Senator of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'pacquiao-manny',
+    name: 'Manny Pacquiao',
+    age: 47,
+    role: 'Boxing Legend and Former Senator',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'poe-grace',
+    name: 'Grace Poe',
+    age: 57,
+    role: 'Former Senator of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'remulla-jonvic',
+    name: 'Jonvic Remulla',
+    age: 58,
+    role: 'Secretary of the Interior and Local Government',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'robredo-leni',
+    name: 'Leni Robredo',
+    age: 60,
+    role: 'Mayor, Naga City',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'romualdez-martin',
+    name: 'Martin Romualdez',
+    age: 62,
+    role: 'Former Speaker of the House',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'tulfo-raffy',
+    name: 'Raffy Tulfo',
+    age: 65,
+    role: 'Senator of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
 ]
 
 function safeImg(src?: string) {
@@ -244,7 +300,7 @@ function VotesBadge({ votes }: { votes: number }) {
 
 function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; voting: boolean }) {
   return (
-    <div className="relative h-[620px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
+    <div className="relative h-[520px] sm:h-[620px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
       <Media src={c.imgUrl} alt={c.name} />
       <VotesBadge votes={c.total_votes} />
 
@@ -317,7 +373,11 @@ function Presidentables({
           <div className="text-sm text-neutral-500">Pick ONE candidate</div>
         </div>
 
-        {selectedId ? <div className="text-sm text-neutral-500">Selected</div> : <div className="text-sm text-neutral-400">One vote only</div>}
+        {selectedId ? (
+          <div className="text-sm text-neutral-500">Selected</div>
+        ) : (
+          <div className="text-sm text-neutral-400">One vote only</div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -501,7 +561,12 @@ export default function VotingGrid({
   if (!presVoteDone) {
     return (
       <div className="w-full">
-        <Presidentables presidentables={presidentables} onPick={pickPresident} pending={presVotePending} selectedId={selectedPresidentId} />
+        <Presidentables
+          presidentables={presidentables}
+          onPick={pickPresident}
+          pending={presVotePending}
+          selectedId={selectedPresidentId}
+        />
       </div>
     )
   }
@@ -512,7 +577,8 @@ export default function VotingGrid({
 
   return (
     <div className="relative" id="creator-battles">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* ✅ MOBILE = 2 columns; DESKTOP stays 2 columns */}
+      <div className="grid grid-cols-2 gap-3 lg:gap-8">
         <CreatorCard c={left} voting={voting} onVote={() => voteCreator(left.id)} />
         <CreatorCard c={right} voting={voting} onVote={() => voteCreator(right.id)} />
       </div>
