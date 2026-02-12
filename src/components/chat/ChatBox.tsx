@@ -1,7 +1,8 @@
+// src/components/chat/ChatBox.tsx
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { supabase } from '@/lib'
+import { supabase } from '@/lib/supabase'
 import AuthModal from '@/components/chat/AuthModal'
 import UsernameGate from '@/components/chat/UsernameGate'
 
@@ -60,7 +61,6 @@ export default function ChatBox() {
       .eq('id', uid)
       .maybeSingle()
 
-    // If row missing, force username creation
     if (!error && !prof) setNeedsUsername(true)
     else setNeedsUsername(false)
   }
@@ -80,7 +80,7 @@ export default function ChatBox() {
       setMsgs([])
     } else {
       const rows = (data ?? []) as ChatMsg[]
-      setMsgs(rows.reverse()) // show oldest -> newest
+      setMsgs(rows.reverse())
     }
 
     setLoading(false)
@@ -106,8 +106,8 @@ export default function ChatBox() {
             if (prev.some((x) => x.id === m.id)) return prev
             return [...prev, m]
           })
+
           requestAnimationFrame(() => {
-            // Only autoscroll if user is near bottom
             const el = scrollerRef.current
             if (!el) return
             const dist = el.scrollHeight - (el.scrollTop + el.clientHeight)
@@ -124,13 +124,9 @@ export default function ChatBox() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleTapComposer() {
+  function handleTapComposer() {
     setErr(null)
-    if (!sessionUserId) {
-      setAuthOpen(true)
-      return
-    }
-    if (needsUsername) return
+    if (!sessionUserId) setAuthOpen(true)
   }
 
   async function send() {
@@ -176,7 +172,10 @@ export default function ChatBox() {
 
   return (
     <>
-      <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3" ref={scrollerRef}>
+      <div
+        className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3"
+        ref={scrollerRef}
+      >
         {loading ? (
           <div className="text-white/35 text-xs">Loading…</div>
         ) : err ? (

@@ -1,7 +1,8 @@
+// src/components/chat/AuthModal.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib'
+import { supabase } from '@/lib/supabase'
 
 export default function AuthModal({
   open,

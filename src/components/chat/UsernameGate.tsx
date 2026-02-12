@@ -1,7 +1,8 @@
+// src/components/chat/UsernameGate.tsx
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib'
+import { supabase } from '@/lib/supabase'
 
 function normalize(u: string) {
   return u.trim()
@@ -27,7 +28,7 @@ export default function UsernameGate({ onDone }: { onDone: () => void }) {
 
       const { error } = await supabase.from('profiles').insert({ id: uid, username: u })
       if (error) {
-        // unique violation messages vary; keep it simple
+        // unique violation (Postgres)
         if ((error as any).code === '23505') throw new Error('Username taken.')
         throw error
       }
