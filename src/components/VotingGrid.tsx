@@ -282,16 +282,8 @@ function Presidentables({
   }, [presidentables])
 
   return (
-    <section className="mb-1 lg:mb-0">
-      <div className="mb-2 lg:mb-1 flex items-end justify-between gap-3">
-        <div>
-          <div className="text-lg font-semibold tracking-tight text-neutral-100">Presidentables</div>
-          <div className="text-xs text-neutral-400">Pick ONE candidate</div>
-        </div>
-        {selectedId ? <div className="text-xs text-neutral-300">Selected</div> : <div className="text-xs text-neutral-400">One vote only</div>}
-      </div>
-
-      {/* ✅ 4/4 guaranteed on WEB */}
+    // ✅ Removed the "Presidentables / Pick ONE candidate" header to pull grid up
+    <section className="mb-0">
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
@@ -482,17 +474,14 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
-    // ✅ NO CUT, NO SCROLL: shrink by width (WEB-only) instead of hiding overflow
     return (
       <div className="w-full">
-        <div className="mx-auto w-full max-w-[980px] xl:max-w-[1100px] px-3 lg:px-6">
-          <Presidentables
-            presidentables={presidentables}
-            onPick={pickPresident}
-            pending={presVotePending}
-            selectedId={selectedPresidentId}
-          />
-        </div>
+        <Presidentables
+          presidentables={presidentables}
+          onPick={pickPresident}
+          pending={presVotePending}
+          selectedId={selectedPresidentId}
+        />
       </div>
     )
   }
