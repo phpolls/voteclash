@@ -121,6 +121,7 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
 function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: number; minPx?: number }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const pRef = useRef<HTMLParagraphElement | null>(null)
+
   const [fontPx, setFontPx] = useState(maxPx)
   const [scrollable, setScrollable] = useState(false)
 
@@ -161,6 +162,8 @@ function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: 
     p.style.fontSize = `${minPx}px`
     const minFits = fitsAt(minPx)
     setScrollable(!minFits)
+
+    p.style.fontSize = `${best}px`
   }, [text, maxPx, minPx])
 
   return (
@@ -230,7 +233,17 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
           onClick={onVote}
           className="mt-2 w-full py-3 rounded-2xl bg-white text-black font-extrabold tracking-wide hover:bg-neutral-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {voting ? 'VOTING...' : 'VOTE'}
+          {voting ? (
+            <>
+              <span className="hidden lg:inline">FOLLOWING...</span>
+              <span className="lg:hidden">VOTING...</span>
+            </>
+          ) : (
+            <>
+              <span className="hidden lg:inline">FOLLOW</span>
+              <span className="lg:hidden">VOTE</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -271,7 +284,8 @@ function Presidentables({
 
   return (
     <section className="mb-0">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-1">
+      {/* ✅ 4/4 on desktop, normal size (no squeeze hack) */}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
@@ -302,13 +316,7 @@ function Presidentables({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />
               </div>
 
-              {!pending ? (
-                <div className="absolute right-3 top-3 z-10 rounded-full border border-white/20 bg-black/25 px-2 py-0.5 text-[10px] font-semibold text-white/85 backdrop-blur-sm">
-                  Vote
-                </div>
-              ) : null}
-
-              <div className="relative flex h-full flex-col justify-end p-3 lg:p-2">
+              <div className="relative flex h-full flex-col justify-end p-3 lg:p-3">
                 <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
                   {p.name}, {p.age}
                 </div>
@@ -463,17 +471,14 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
-    // ✅ This is the key: smaller width => smaller 4:5 height => all 8 visible
     return (
       <div className="w-full">
-        <div className="mx-auto w-full max-w-[720px] xl:max-w-[820px]">
-          <Presidentables
-            presidentables={presidentables}
-            onPick={pickPresident}
-            pending={presVotePending}
-            selectedId={selectedPresidentId}
-          />
-        </div>
+        <Presidentables
+          presidentables={presidentables}
+          onPick={pickPresident}
+          pending={presVotePending}
+          selectedId={selectedPresidentId}
+        />
       </div>
     )
   }
