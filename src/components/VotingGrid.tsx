@@ -321,7 +321,8 @@ function Presidentables({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
                 isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
                 pending ? 'opacity-80' : 'hover:bg-neutral-50',
-                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-[290px]',
+                // ✅ DESKTOP FIX: remove huge lg height to avoid page scroll + aggressive crop
+                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-[18vh] lg:min-h-[150px] lg:max-h-[190px]',
               ].join(' ')}
               style={{ minWidth: 0 }}
             >
@@ -330,8 +331,8 @@ function Presidentables({
                   src={safeImg(p.imgUrl)}
                   alt={p.name}
                   draggable={false}
-                  // ✅ NO FACE CUT: contain on mobile, cover on desktop
-                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-top"
+                  // ✅ DESKTOP FIX: keep cover but use safer crop point (faces)
+                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-[50%_18%]"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = safeImg()
                   }}

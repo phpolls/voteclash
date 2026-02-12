@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import VotingGrid from '@/components/VotingGrid'
+import ChatBox from '@/components/chat/ChatBox'
 
 type PresidentableUI = { id: string; name: string; imgUrl: string; total_votes: number }
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
@@ -135,22 +136,7 @@ export default function HomeClient({
               {showCreators ? (
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col min-h-[280px]">
                   <div className="text-white font-extrabold tracking-tight">CHAT</div>
-                  <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3">
-                    <div className="text-white/35 text-xs">No messages yet.</div>
-                  </div>
-                  <div className="mt-3 flex-shrink-0 flex items-center gap-2">
-                    <input
-                      className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
-                      placeholder="Type your message…"
-                      disabled
-                    />
-                    <button
-                      className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
-                      disabled
-                    >
-                      Send
-                    </button>
-                  </div>
+                  <ChatBox />
                 </div>
               ) : null}
             </div>
