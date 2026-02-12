@@ -96,7 +96,7 @@ function toCreator(row: CreatorRow): Creator | null {
   }
 }
 
-/* -------------------- Creator UI (unchanged) -------------------- */
+/* -------------------- Creator UI -------------------- */
 
 function Media({ src, alt }: { src: string | null; alt: string }) {
   if (!src) {
@@ -106,7 +106,16 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
       </div>
     )
   }
-  return <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="absolute inset-0 h-full w-full object-cover"
+      onError={(e) => {
+        e.currentTarget.style.display = 'none'
+      }}
+    />
+  )
 }
 
 function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: number; minPx?: number }) {
@@ -213,7 +222,9 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
         >
           {c.name}
         </h2>
+
         <QuoteBlock quote={c.quote} />
+
         <button
           disabled={voting}
           onClick={onVote}
@@ -452,10 +463,10 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
-    // ✅ THIS is what actually shrinks 4:5 cards so all 8 can show
+    // ✅ This is the key: smaller width => smaller 4:5 height => all 8 visible
     return (
       <div className="w-full">
-        <div className="mx-auto w-full max-w-[860px] xl:max-w-[940px]">
+        <div className="mx-auto w-full max-w-[720px] xl:max-w-[820px]">
           <Presidentables
             presidentables={presidentables}
             onPick={pickPresident}

@@ -1,10 +1,8 @@
-// src/app/HomeClient.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import VotingGrid from '@/components/VotingGrid'
 import ChatBox from '@/components/chat/ChatBox'
-import Arena2HWordmark from '@/components/Arena2HWordmark'
 
 type PresidentableUI = { id: string; name: string; imgUrl: string; total_votes: number }
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
@@ -46,56 +44,21 @@ export default function HomeClient({
   if (!hydrated) return null
 
   const isPres = !showCreators
-  const title = isPres ? 'CHOOSE YOUR NEXT PRESIDENT' : 'SHALLOW OR FOLLOW'
-  const showOneVote = isPres
 
   return (
     <main className="min-h-screen bg-transparent">
       {/* ================= MOBILE ================= */}
       <div className="lg:hidden px-4 pt-4 pb-4 space-y-3">
-        {/* ✅ single compact hero: Arena2H + contest title + one-vote badge + share slot */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-4 py-4 backdrop-blur">
-          {/* subtle sheen (doesn't add height) */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
-
-          <div className="relative flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              {/* Arena2H (small, crisp) */}
-              <div className="leading-none">
-                <div className="scale-[0.88] origin-left">
-                  <Arena2HWordmark />
-                </div>
-              </div>
-
-              {/* Title (stylized, not boring) */}
-              <div
-                className={[
-                  'mt-2 uppercase font-extrabold',
-                  'tracking-[-0.03em] leading-[0.92]',
-                  'text-[22px]',
-                ].join(' ')}
-              >
-                <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
-                  {title}
-                </span>
-              </div>
-
-              {showOneVote ? (
-                <div className="mt-2 inline-flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-white" />
-                  <span className="text-white font-extrabold tracking-[0.28em] text-[11px] uppercase">
-                    ONE VOTE ONLY
-                  </span>
-                  <span className="h-2 w-2 rounded-full bg-white/40" />
-                </div>
-              ) : null}
-            </div>
-
-            {/* Share slot (empty, no icon yet) */}
-            <div className="shrink-0">
-              <div className="h-10 w-10 rounded-2xl border border-white/10 bg-black/15" />
-            </div>
+        {/* keep mobile as-is for now; III will handle mobile creators header */}
+        <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur">
+          <div className="text-white font-extrabold text-2xl leading-none">
+            {isPres ? 'CHOOSE YOUR NEXT PRESIDENT' : 'Shallow Or Follow'}
           </div>
+          {isPres ? (
+            <div className="mt-2 inline-flex items-center rounded-full border border-white/15 bg-black/25 px-3 py-1">
+              <span className="text-white font-extrabold tracking-[0.26em] text-[10px] uppercase">ONE VOTE ONLY</span>
+            </div>
+          ) : null}
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur">
@@ -103,7 +66,10 @@ export default function HomeClient({
         </div>
 
         {showCreators ? (
-          <a href="/leaderboards" className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold">
+          <a
+            href="/leaderboards"
+            className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold"
+          >
             Show Results
           </a>
         ) : null}
@@ -115,24 +81,38 @@ export default function HomeClient({
           <div
             className={[
               'grid gap-10 lg:items-start',
-              showCreators ? 'grid-cols-[230px_1fr_230px]' : 'grid-cols-1',
+              showCreators ? 'grid-cols-[260px_1fr_260px]' : 'grid-cols-1',
             ].join(' ')}
           >
+            {/* LEFT SIDEBAR (WEB creators only) */}
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-2">Presidentiables Ranking</div>
+                  <div className="text-white font-extrabold tracking-tight mb-3">
+                    Presidentiables Ranking
+                  </div>
+
                   <div className="space-y-2">
                     {presidentiablesTop.slice(0, 20).map((p, idx) => (
                       <div
                         key={p.id}
-                        className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
+                        className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
-                          <div className="text-white font-semibold truncate">{p.name}</div>
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <div className="w-6 shrink-0 text-white/70 font-extrabold tabular-nums">
+                            {idx + 1}
+                          </div>
+
+                          {/* ✅ no truncate, wrap fully */}
+                          <div className="min-w-0 flex-1 text-[12px] leading-snug text-white font-semibold whitespace-normal break-words">
+                            {p.name}
+                          </div>
                         </div>
-                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(p.votes)}</div>
+
+                        {/* ✅ fixed vote column, supports millions */}
+                        <div className="shrink-0 w-[96px] text-right text-[12px] leading-snug text-white/75 font-extrabold tabular-nums whitespace-nowrap">
+                          {formatVotes(p.votes)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -140,58 +120,62 @@ export default function HomeClient({
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-5">
-              {/* ✅ single compact hero (no ADS, no extra header, pulls cards up) */}
-              <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-6 py-5 shadow-lg backdrop-blur">
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
-
-                <div className="relative flex items-start justify-between gap-6">
-                  <div className="min-w-0 flex-1">
-                    {/* Arena2H */}
-                    <div className="leading-none">
-                      <div className="scale-[0.92] origin-left">
-                        <Arena2HWordmark />
-                      </div>
+            {/* CENTER */}
+            <div className="flex flex-col gap-4">
+              {/* ✅ WEB HEADER (no ADS box) */}
+              <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-4 shadow-lg backdrop-blur">
+                {isPres ? (
+                  <>
+                    <div className="text-white font-extrabold uppercase tracking-[-0.03em] leading-[0.92] text-[34px]">
+                      CHOOSE YOUR NEXT PRESIDENT
+                    </div>
+                    <div className="mt-2 inline-flex items-center rounded-full border border-white/15 bg-black/25 px-4 py-1.5">
+                      <span className="text-white font-extrabold tracking-[0.28em] text-[11px] uppercase">
+                        ONE VOTE ONLY
+                      </span>
                     </div>
 
-                    {/* Title (cinematic) */}
-                    <h1
-                      className={[
-                        'mt-2 uppercase font-extrabold',
-                        'tracking-[-0.04em] leading-[0.90]',
-                        isPres ? 'text-[44px]' : 'text-[40px]',
-                      ].join(' ')}
-                    >
-                      <span className="bg-gradient-to-r from-white via-white to-white/65 bg-clip-text text-transparent">
-                        {title}
-                      </span>
-                    </h1>
+                    {/* share slot (empty) */}
+                    <div className="mt-3 h-[44px] w-[44px] rounded-2xl border border-white/10 bg-black/15" />
+                  </>
+                ) : (
+                  <>
+                    {/* ✅ II.A.2: Creators contest title (WEB only) */}
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-white/70 text-[12px] font-extrabold tracking-[0.35em] uppercase">
+                          Creators Contest
+                        </div>
 
-                    {showOneVote ? (
-                      <div className="mt-3">
-                        <div className="inline-flex items-center gap-3 rounded-full border border-white/16 bg-black/25 px-5 py-2">
-                          <span className="h-2.5 w-2.5 rounded-full bg-white" />
-                          <span className="text-white font-extrabold tracking-[0.32em] text-[12px] uppercase">
-                            ONE VOTE ONLY
+                        <h1 className="mt-1 text-white font-black tracking-[-0.035em] leading-[0.88] text-[48px]">
+                          <span className="bg-gradient-to-r from-white via-white to-white/65 bg-clip-text text-transparent">
+                            Shallow
                           </span>
-                          <span className="h-2.5 w-2.5 rounded-full bg-white/35" />
+                          <span className="text-white/55"> Or </span>
+                          <span className="bg-gradient-to-r from-white via-white to-white/65 bg-clip-text text-transparent">
+                            Follow
+                          </span>
+                        </h1>
+
+                        <div className="mt-2 text-white/70 text-sm">
+                          Pick who you&apos;d <span className="text-white font-bold">FOLLOW</span>.
                         </div>
                       </div>
-                    ) : null}
-                  </div>
 
-                  {/* Share slot (empty) */}
-                  <div className="shrink-0">
-                    <div className="h-[52px] w-[52px] rounded-2xl border border-white/10 bg-black/15" />
-                  </div>
-                </div>
+                      {/* share slot (empty, no icon yet) */}
+                      <div className="shrink-0">
+                        <div className="h-[48px] w-[48px] rounded-2xl border border-white/10 bg-black/15" />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg backdrop-blur">
                 <VotingGrid presidentables={presidentables} onPresidentVoted={handlePresidentVoted} />
               </div>
 
-              {/* ✅ CHAT ONLY AFTER PRESIDENT VOTE */}
+              {/* ✅ CHAT ONLY AFTER PRESIDENT VOTE (your rule) */}
               {showCreators ? (
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col min-h-[280px]">
                   <div className="text-white font-extrabold tracking-tight">CHAT</div>
@@ -200,21 +184,35 @@ export default function HomeClient({
               ) : null}
             </div>
 
+            {/* RIGHT SIDEBAR (WEB creators only) */}
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-2">Creators Ranking</div>
+                  <div className="text-white font-extrabold tracking-tight mb-3">
+                    Creators Ranking
+                  </div>
+
                   <div className="space-y-2">
                     {creatorsTop.slice(0, 20).map((c, idx) => (
                       <div
                         key={c.id}
-                        className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
+                        className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
-                          <div className="text-white font-semibold truncate">{c.name}</div>
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <div className="w-6 shrink-0 text-white/70 font-extrabold tabular-nums">
+                            {idx + 1}
+                          </div>
+
+                          {/* ✅ no truncate, wrap fully */}
+                          <div className="min-w-0 flex-1 text-[12px] leading-snug text-white font-semibold whitespace-normal break-words">
+                            {c.name}
+                          </div>
                         </div>
-                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(c.votes)}</div>
+
+                        {/* ✅ fixed vote column, supports millions */}
+                        <div className="shrink-0 w-[96px] text-right text-[12px] leading-snug text-white/75 font-extrabold tabular-nums whitespace-nowrap">
+                          {formatVotes(c.votes)}
+                        </div>
                       </div>
                     ))}
                   </div>
