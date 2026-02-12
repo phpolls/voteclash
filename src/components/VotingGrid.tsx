@@ -43,7 +43,6 @@ type PresidentableUI = {
 const BUCKET = 'cards'
 const LS_PRES_KEY = 'voteclash_pres_voted'
 
-// ✅ Hardcoded age/role
 const PRES_META: Record<string, { age: number; role: string }> = {
   'duterte-sara': { age: 47, role: 'Vice President of the Philippines' },
   'hontiveros-risa': { age: 59, role: 'Senator of the Philippines' },
@@ -97,7 +96,7 @@ function toCreator(row: CreatorRow): Creator | null {
   }
 }
 
-/* -------------------- Creator UI -------------------- */
+/* -------------------- Creator UI (unchanged) -------------------- */
 
 function Media({ src, alt }: { src: string | null; alt: string }) {
   if (!src) {
@@ -107,23 +106,12 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
       </div>
     )
   }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className="absolute inset-0 h-full w-full object-cover"
-      onError={(e) => {
-        e.currentTarget.style.display = 'none'
-      }}
-    />
-  )
+  return <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
 }
 
 function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: number; minPx?: number }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const pRef = useRef<HTMLParagraphElement | null>(null)
-
   const [fontPx, setFontPx] = useState(maxPx)
   const [scrollable, setScrollable] = useState(false)
 
@@ -163,13 +151,7 @@ function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: 
 
     p.style.fontSize = `${minPx}px`
     const minFits = fitsAt(minPx)
-    if (!minFits) {
-      p.style.fontSize = `${best}px`
-      setScrollable(true)
-    } else {
-      p.style.fontSize = `${best}px`
-      setScrollable(false)
-    }
+    setScrollable(!minFits)
   }, [text, maxPx, minPx])
 
   return (
@@ -199,7 +181,6 @@ function QuoteBlock({ quote }: { quote: string | null }) {
       </div>
     )
   }
-
   return <AutoFitQuote text={quote} maxPx={22} minPx={12} />
 }
 
@@ -221,9 +202,7 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
     <div className="relative h-[320px] sm:h-[420px] lg:h-[520px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
       <Media src={c.imgUrl} alt={c.name} />
       <VotesBadge votes={c.total_votes} />
-
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-
       <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 pt-24">
         <h2
           className="text-[16px] sm:text-lg md:text-xl font-extrabold text-white tracking-tight leading-tight pr-16 whitespace-normal break-normal"
@@ -234,9 +213,7 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
         >
           {c.name}
         </h2>
-
         <QuoteBlock quote={c.quote} />
-
         <button
           disabled={voting}
           onClick={onVote}
@@ -282,9 +259,8 @@ function Presidentables({
   }, [presidentables])
 
   return (
-    // ✅ Removed the "Presidentables / Pick ONE candidate" header to pull grid up
     <section className="mb-0">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-1">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
@@ -325,7 +301,6 @@ function Presidentables({
                 <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
                   {p.name}, {p.age}
                 </div>
-
                 <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
                   <div
                     className="whitespace-normal break-words overflow-hidden"
@@ -384,7 +359,10 @@ export default function VotingGrid({
     setLoading(true)
     setError(null)
 
-    const { data, error } = await supabase.from('creators').select('id,name,quote,total_votes,img_path,side').limit(500)
+    const { data, error } = await supabase
+      .from('creators')
+      .select('id,name,quote,total_votes,img_path,side')
+      .limit(500)
 
     if (error) {
       setError(error.message)
@@ -474,14 +452,17 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
+    // ✅ THIS is what actually shrinks 4:5 cards so all 8 can show
     return (
       <div className="w-full">
-        <Presidentables
-          presidentables={presidentables}
-          onPick={pickPresident}
-          pending={presVotePending}
-          selectedId={selectedPresidentId}
-        />
+        <div className="mx-auto w-full max-w-[860px] xl:max-w-[940px]">
+          <Presidentables
+            presidentables={presidentables}
+            onPick={pickPresident}
+            pending={presVotePending}
+            selectedId={selectedPresidentId}
+          />
+        </div>
       </div>
     )
   }
