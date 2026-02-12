@@ -2,37 +2,39 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 const SITE_NAME = 'Arena2H'
-const SITE_URL = 'https://arena2h.vercel.app' // <-- change this to your real domain
-const OG_IMAGE = `${SITE_URL}/og.jpg`      // <-- put og.jpg inside /public
+const SITE_URL = 'https://arena2h.vercel.app' // <-- CHANGE to your real domain
+const OG_IMAGE = '/og.jpg' // place og.jpg inside /public
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+
   title: {
     default: SITE_NAME,
     template: `%s • ${SITE_NAME}`,
   },
-  description: 'Head-to-head voting battles.',
-  metadataBase: new URL(SITE_URL),
+
+  description: 'Vote head-to-head and see real-time rankings.',
 
   openGraph: {
     type: 'website',
-    url: SITE_URL,
+    title: 'Choose Your Next President',
+    description: 'Vote head-to-head and see real-time rankings.',
     siteName: SITE_NAME,
-    title: SITE_NAME,
-    description: 'Head-to-head voting battles.',
+    url: SITE_URL,
     images: [
       {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} preview`,
+        alt: 'Arena2H Preview',
       },
     ],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: SITE_NAME,
-    description: 'Head-to-head voting battles.',
+    title: 'Choose Your Next President',
+    description: 'Vote head-to-head and see real-time rankings.',
     images: [OG_IMAGE],
   },
 }
