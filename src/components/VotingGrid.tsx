@@ -282,7 +282,6 @@ function Presidentables({
   }, [presidentables])
 
   return (
-    // ✅ tightened vertical spacing on WEB so it fits without shrinking fonts
     <section className="mb-1 lg:mb-0">
       <div className="mb-2 lg:mb-1 flex items-end justify-between gap-3">
         <div>
@@ -330,13 +329,11 @@ function Presidentables({
                 </div>
               ) : null}
 
-              {/* ✅ keep your original readable font sizes; only reduce padding on WEB */}
               <div className="relative flex h-full flex-col justify-end p-3 lg:p-2">
                 <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
                   {p.name}, {p.age}
                 </div>
 
-                {/* ✅ clamp role height via max height + overflow (no plugin needed) */}
                 <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
                   <div
                     className="whitespace-normal break-words overflow-hidden"
@@ -485,10 +482,17 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
-    // ✅ WEB-only: lock to viewport height so it fits; no scaling (keeps fonts readable)
+    // ✅ NO CUT, NO SCROLL: shrink by width (WEB-only) instead of hiding overflow
     return (
-      <div className="w-full lg:h-[calc(100vh-96px)] lg:overflow-hidden">
-        <Presidentables presidentables={presidentables} onPick={pickPresident} pending={presVotePending} selectedId={selectedPresidentId} />
+      <div className="w-full">
+        <div className="mx-auto w-full max-w-[980px] xl:max-w-[1100px] px-3 lg:px-6">
+          <Presidentables
+            presidentables={presidentables}
+            onPick={pickPresident}
+            pending={presVotePending}
+            selectedId={selectedPresidentId}
+          />
+        </div>
       </div>
     )
   }
