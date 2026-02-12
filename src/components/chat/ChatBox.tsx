@@ -134,10 +134,10 @@ export default function ChatBox() {
     setErr(null)
 
     const { error } = await supabase.from('chat_messages').insert({
-      anon_id: anonId,
-      display_name: displayName,
-      text: t,
-    })
+  anon_id: anonId,
+  display_name_snapshot: `${displayName} #${shortHash(anonId)}`,
+  text: t,
+})
 
     if (error) {
       setErr(error.message)
