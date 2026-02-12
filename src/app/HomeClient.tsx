@@ -1,3 +1,7 @@
+// src/app/HomeClient.tsx
+// ONLY CHANGE: right sidebar title "Creators Ranking" -> "Leaderboard"
+// (Full file so you can paste cleanly)
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -17,9 +21,7 @@ function RankRow({ idx, name, votes }: { idx: number; name: string; votes: numbe
   return (
     <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
       <div className="w-6 shrink-0 text-white/70 font-extrabold tabular-nums">{idx}</div>
-
       <div className="flex-1 text-[11px] font-semibold text-white whitespace-nowrap">{name}</div>
-
       <div className="shrink-0 w-[92px] text-right text-[11px] font-extrabold tabular-nums text-white/80 whitespace-nowrap">
         {formatVotes(votes)}
       </div>
@@ -63,7 +65,6 @@ export default function HomeClient({
     <main className="min-h-screen bg-transparent">
       {/* ================= MOBILE ================= */}
       <div className="lg:hidden px-4 pt-4 pb-4 space-y-3">
-        {/* ✅ MOBILE HEADER RULES */}
         <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
           {isPres ? (
             <>
@@ -77,18 +78,15 @@ export default function HomeClient({
               </div>
             </>
           ) : (
-            <>
-              {/* ✅ NO "VoteClash", NO "Creator Battles" */}
-              <div className="text-white font-black tracking-[-0.04em] leading-[0.92] text-[28px]">
-                <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
-                  Shallow
-                </span>
-                <span className="text-white/55"> Or </span>
-                <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
-                  Follow
-                </span>
-              </div>
-            </>
+            <div className="text-white font-black tracking-[-0.04em] leading-[0.92] text-[28px]">
+              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
+                Shallow
+              </span>
+              <span className="text-white/55"> Or </span>
+              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
+                Follow
+              </span>
+            </div>
           )}
         </div>
 
@@ -97,10 +95,7 @@ export default function HomeClient({
         </div>
 
         {showCreators ? (
-          <a
-            href="/leaderboards"
-            className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold"
-          >
+          <a href="/leaderboards" className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold">
             Show Results
           </a>
         ) : null}
@@ -171,9 +166,9 @@ export default function HomeClient({
             {showCreators ? (
               <div className="lg:sticky lg:top-4 self-start">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-3">
-                    Creators Ranking
-                  </div>
+                  {/* ✅ changed title */}
+                  <div className="text-white font-extrabold tracking-tight mb-3">Leaderboard</div>
+
                   <div className="space-y-2">
                     {creatorsTop.slice(0, 20).map((c, i) => (
                       <RankRow key={c.id} idx={i + 1} name={c.name} votes={c.votes} />

@@ -1,3 +1,4 @@
+// src/components/VotingGrid.tsx
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -43,6 +44,7 @@ type PresidentableUI = {
 const BUCKET = 'cards'
 const LS_PRES_KEY = 'voteclash_pres_voted'
 
+// ✅ Hardcoded age/role
 const PRES_META: Record<string, { age: number; role: string }> = {
   'duterte-sara': { age: 47, role: 'Vice President of the Philippines' },
   'hontiveros-risa': { age: 59, role: 'Senator of the Philippines' },
@@ -106,6 +108,7 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
       </div>
     )
   }
+
   return (
     <img
       src={src}
@@ -159,6 +162,7 @@ function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: 
     p.style.fontSize = `${best}px`
     setFontPx(best)
 
+    // if even minPx doesn't fit, allow scroll
     p.style.fontSize = `${minPx}px`
     const minFits = fitsAt(minPx)
     setScrollable(!minFits)
@@ -193,6 +197,7 @@ function QuoteBlock({ quote }: { quote: string | null }) {
       </div>
     )
   }
+
   return <AutoFitQuote text={quote} maxPx={22} minPx={12} />
 }
 
@@ -214,7 +219,9 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
     <div className="relative h-[320px] sm:h-[420px] lg:h-[520px] rounded-3xl overflow-hidden bg-black shadow-xl border border-black/10">
       <Media src={c.imgUrl} alt={c.name} />
       <VotesBadge votes={c.total_votes} />
+
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+
       <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 pt-24">
         <h2
           className="text-[16px] sm:text-lg md:text-xl font-extrabold text-white tracking-tight leading-tight pr-16 whitespace-normal break-normal"
@@ -228,22 +235,13 @@ function CreatorCard({ c, onVote, voting }: { c: Creator; onVote: () => void; vo
 
         <QuoteBlock quote={c.quote} />
 
+        {/* ✅ MOBILE + DESKTOP: FOLLOW */}
         <button
           disabled={voting}
           onClick={onVote}
           className="mt-2 w-full py-3 rounded-2xl bg-white text-black font-extrabold tracking-wide hover:bg-neutral-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {voting ? (
-            <>
-              <span className="hidden lg:inline">FOLLOWING...</span>
-              <span className="lg:hidden">VOTING...</span>
-            </>
-          ) : (
-            <>
-              <span className="hidden lg:inline">FOLLOW</span>
-              <span className="lg:hidden">VOTE</span>
-            </>
-          )}
+          {voting ? 'FOLLOWING...' : 'FOLLOW'}
         </button>
       </div>
     </div>
@@ -284,7 +282,6 @@ function Presidentables({
 
   return (
     <section className="mb-0">
-      {/* ✅ 4/4 on desktop, normal size (no squeeze hack) */}
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
