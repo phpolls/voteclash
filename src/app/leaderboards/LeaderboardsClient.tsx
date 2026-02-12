@@ -76,8 +76,8 @@ export default function LeaderboardsClient({
         {/* ✅ Removed "(Top 8)" */}
         <RankList title="Presidentiables" items={presidentiablesTop} limit={8} />
 
-        {/* ✅ Changed title to "Top Follows" */}
-        <RankList title="Top Follows" items={creatorsTop} limit={20} />
+        {/* ✅ Changed title to "Leaderboard" */}
+        <RankList title="Leaderboard" items={creatorsTop} limit={20} />
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur flex flex-col min-h-[320px]">
           <div className="text-white font-extrabold tracking-tight">CHAT</div>
