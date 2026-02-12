@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string
@@ -10,69 +11,86 @@ if (!supabaseUrl || !serviceKey) {
 
 const admin = createClient(supabaseUrl, serviceKey)
 
-// Minimal in-memory rate limit (best-effort; resets on cold starts)
-const lastSendByUser = new Map<string, number>()
+const lastByAnon = new Map<string, number>()
+const lastByIp = new Map<string, number>()
+const firstSeenAnon = new Map<string, number>()
+const firstSeenIp = new Map<string, number>()
+
 const MIN_MS = 2500
+const NEW_WINDOW_MS = 10 * 60 * 1000
+
+function getIp(req: Request) {
+  const xf = req.headers.get('x-forwarded-for') || ''
+  const ip = xf.split(',')[0].trim()
+  return ip || 'unknown'
+}
 
 function hasLink(s: string) {
   return /(https?:\/\/|www\.)/i.test(s)
 }
 
+function shortHash(anonId: string) {
+  return crypto.createHash('sha256').update(anonId).digest('hex').slice(0, 3).toUpperCase()
+}
+
+function cleanBaseName(name: string) {
+  const n = (name || '').trim()
+  if (!/^[a-zA-Z0-9_]{2,16}$/.test(n)) return null
+  return n
+}
+
 export async function POST(req: Request) {
   try {
-    const auth = req.headers.get('authorization') || ''
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
-    if (!token) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 })
-
-    const { data: userRes, error: userErr } = await admin.auth.getUser(token)
-    if (userErr || !userRes.user) {
-      return NextResponse.json({ error: 'Not signed in.' }, { status: 401 })
-    }
-
-    const user = userRes.user
-    const userId = user.id
-
+    const ip = getIp(req)
     const now = Date.now()
-    const last = lastSendByUser.get(userId) ?? 0
-    if (now - last < MIN_MS) {
-      return NextResponse.json({ error: 'Slow down.' }, { status: 429 })
-    }
 
     const body = await req.json().catch(() => null)
+    const anonId = String(body?.anon_id ?? '').trim()
+    const baseNameRaw = String(body?.base_name ?? '').trim()
     const textRaw = String(body?.text ?? '')
     const text = textRaw.trim()
 
+    if (!anonId) return NextResponse.json({ error: 'Missing anon_id.' }, { status: 400 })
     if (!text) return NextResponse.json({ error: 'Empty message.' }, { status: 400 })
     if (text.length > 300) return NextResponse.json({ error: 'Too long.' }, { status: 400 })
 
-    // Optional: block links for first 10 minutes
-    const createdAt = new Date(user.created_at).getTime()
-    if (now - createdAt < 10 * 60 * 1000 && hasLink(text)) {
-      return NextResponse.json({ error: 'Links disabled for new accounts.' }, { status: 400 })
+    const baseName = cleanBaseName(baseNameRaw)
+    if (!baseName) {
+      return NextResponse.json(
+        { error: 'Name must be 2–16 chars: letters/numbers/underscore only.' },
+        { status: 400 }
+      )
     }
 
-    // Get username (must exist because UsernameGate blocks UI, but enforce anyway)
-    const { data: prof, error: profErr } = await admin
-      .from('profiles')
-      .select('username')
-      .eq('id', userId)
-      .maybeSingle()
+    const lastA = lastByAnon.get(anonId) ?? 0
+    if (now - lastA < MIN_MS) return NextResponse.json({ error: 'Slow down.' }, { status: 429 })
 
-    if (profErr || !prof?.username) {
-      return NextResponse.json({ error: 'Set username first.' }, { status: 400 })
+    const lastI = lastByIp.get(ip) ?? 0
+    if (now - lastI < MIN_MS) return NextResponse.json({ error: 'Slow down.' }, { status: 429 })
+
+    if (!firstSeenAnon.has(anonId)) firstSeenAnon.set(anonId, now)
+    if (!firstSeenIp.has(ip)) firstSeenIp.set(ip, now)
+
+    const anonAge = now - (firstSeenAnon.get(anonId) ?? now)
+    const ipAge = now - (firstSeenIp.get(ip) ?? now)
+    if ((anonAge < NEW_WINDOW_MS || ipAge < NEW_WINDOW_MS) && hasLink(text)) {
+      return NextResponse.json({ error: 'Links disabled for new users.' }, { status: 400 })
     }
+
+    const tag = shortHash(anonId)
+    const display = `${baseName} #${tag}`
 
     const { error: insErr } = await admin.from('chat_messages').insert({
-      user_id: userId,
-      username_snapshot: prof.username,
+      anon_id: anonId,
+      display_name_snapshot: display,
       text,
     })
 
-    if (insErr) {
-      return NextResponse.json({ error: 'Failed to send.' }, { status: 500 })
-    }
+    if (insErr) return NextResponse.json({ error: 'Failed to send.' }, { status: 500 })
 
-    lastSendByUser.set(userId, now)
+    lastByAnon.set(anonId, now)
+    lastByIp.set(ip, now)
+
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to send.' }, { status: 500 })
