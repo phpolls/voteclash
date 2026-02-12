@@ -34,14 +34,12 @@ function RankList({
               {idx + 1}
             </div>
 
-            {/* Full name (NO ellipsis) */}
             <div className="flex-1 min-w-0">
               <div className="text-white font-semibold text-[13px] leading-5 break-words whitespace-normal">
                 {x.name}
               </div>
             </div>
 
-            {/* Votes (will always fit, stays right) */}
             <div className="text-white/80 font-extrabold tabular-nums whitespace-nowrap text-[12px] leading-6">
               {formatVotes(x.votes)}
             </div>
@@ -75,10 +73,12 @@ export default function LeaderboardsClient({
           <div className="mt-1 text-white/70 text-sm">Results</div>
         </div>
 
-        <RankList title="Presidentiables (Top 8)" items={presidentiablesTop} limit={8} />
-        <RankList title="Creators (Top 20)" items={creatorsTop} limit={20} />
+        {/* ✅ Removed "(Top 8)" */}
+        <RankList title="Presidentiables" items={presidentiablesTop} limit={8} />
 
-        {/* Chatbox (only here) */}
+        {/* ✅ Changed title to "Top Follows" */}
+        <RankList title="Top Follows" items={creatorsTop} limit={20} />
+
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur flex flex-col min-h-[320px]">
           <div className="text-white font-extrabold tracking-tight">CHAT</div>
           <ChatBox />
