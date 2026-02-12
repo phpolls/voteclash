@@ -65,13 +65,55 @@ const PRES_META: Record<string, { age: number; role: string }> = {
 }
 
 const DEFAULT_PRESIDENTABLES: PresidentableUI[] = [
-  { id: 'duterte-sara', name: 'Sara Duterte', age: 47, role: 'Vice President of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'hontiveros-risa', name: 'Risa Hontiveros', age: 59, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'pacquiao-manny', name: 'Manny Pacquiao', age: 47, role: 'Boxing Legend and Former Senator', imgUrl: '', total_votes: 0 },
-  { id: 'poe-grace', name: 'Grace Poe', age: 57, role: 'Former Senator of the Philippines', imgUrl: '', total_votes: 0 },
-  { id: 'remulla-jonvic', name: 'Jonvic Remulla', age: 58, role: 'Secretary of the Interior and Local Government', imgUrl: '', total_votes: 0 },
+  {
+    id: 'duterte-sara',
+    name: 'Sara Duterte',
+    age: 47,
+    role: 'Vice President of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'hontiveros-risa',
+    name: 'Risa Hontiveros',
+    age: 59,
+    role: 'Senator of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'pacquiao-manny',
+    name: 'Manny Pacquiao',
+    age: 47,
+    role: 'Boxing Legend and Former Senator',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'poe-grace',
+    name: 'Grace Poe',
+    age: 57,
+    role: 'Former Senator of the Philippines',
+    imgUrl: '',
+    total_votes: 0,
+  },
+  {
+    id: 'remulla-jonvic',
+    name: 'Jonvic Remulla',
+    age: 58,
+    role: 'Secretary of the Interior and Local Government',
+    imgUrl: '',
+    total_votes: 0,
+  },
   { id: 'robredo-leni', name: 'Leni Robredo', age: 60, role: 'Mayor, Naga City', imgUrl: '', total_votes: 0 },
-  { id: 'romualdez-martin', name: 'Martin Romualdez', age: 62, role: 'Former Speaker of the House', imgUrl: '', total_votes: 0 },
+  {
+    id: 'romualdez-martin',
+    name: 'Martin Romualdez',
+    age: 62,
+    role: 'Former Speaker of the House',
+    imgUrl: '',
+    total_votes: 0,
+  },
   { id: 'tulfo-raffy', name: 'Raffy Tulfo', age: 65, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
 ]
 
@@ -321,8 +363,8 @@ function Presidentables({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
                 isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
                 pending ? 'opacity-80' : 'hover:bg-neutral-50',
-                // ✅ DESKTOP FIX: remove huge lg height to avoid page scroll + aggressive crop
-                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-[18vh] lg:min-h-[150px] lg:max-h-[190px]',
+                // ✅ DESKTOP HEIGHT FIX: taller cards so faces aren't clipped
+                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-[240px]',
               ].join(' ')}
               style={{ minWidth: 0 }}
             >
@@ -331,8 +373,8 @@ function Presidentables({
                   src={safeImg(p.imgUrl)}
                   alt={p.name}
                   draggable={false}
-                  // ✅ DESKTOP FIX: keep cover but use safer crop point (faces)
-                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-[50%_18%]"
+                  // ✅ Full bleed, no black rectangle; crop anchored to top for faces
+                  className="h-full w-full object-cover object-top"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = safeImg()
                   }}
@@ -399,7 +441,10 @@ export default function VotingGrid({
     setLoading(true)
     setError(null)
 
-    const { data, error } = await supabase.from('creators').select('id,name,quote,total_votes,img_path,side').limit(500)
+    const { data, error } = await supabase
+      .from('creators')
+      .select('id,name,quote,total_votes,img_path,side')
+      .limit(500)
 
     if (error) {
       setError(error.message)
