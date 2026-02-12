@@ -45,20 +45,17 @@ export default function HomeClient({
 
   return (
     <main className="min-h-screen bg-transparent">
-      {/* ================= MOBILE (Voting only + Show Results button) ================= */}
+      {/* ================= MOBILE ================= */}
       <div className="lg:hidden px-4 pt-4 pb-4 space-y-3">
-        {/* Website name + title */}
         <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
           <div className="text-white font-extrabold text-2xl leading-none">VoteClash</div>
           <div className="mt-1 text-white/70 text-sm">Head-to-head creator battles</div>
         </div>
 
-        {/* Voting */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur">
           <VotingGrid presidentables={presidentables} onPresidentVoted={handlePresidentVoted} />
         </div>
 
-        {/* After president vote: show results button (no chat on home) */}
         {showCreators ? (
           <a
             href="/leaderboards"
@@ -127,14 +124,19 @@ export default function HomeClient({
               </div>
 
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur">
-                <VotingGrid presidentables={presidentables} onPresidentVoted={handlePresidentVoted} />
+                <VotingGrid
+                  presidentables={presidentables}
+                  onPresidentVoted={handlePresidentVoted}
+                />
               </div>
 
-              {/* ✅ CHAT ALWAYS VISIBLE ON DESKTOP */}
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col min-h-[280px]">
-                <div className="text-white font-extrabold tracking-tight">CHAT</div>
-                <ChatBox />
-              </div>
+              {/* ✅ CHAT ONLY AFTER PRESIDENT VOTE */}
+              {showCreators ? (
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur flex flex-col min-h-[280px]">
+                  <div className="text-white font-extrabold tracking-tight">CHAT</div>
+                  <ChatBox />
+                </div>
+              ) : null}
             </div>
 
             {showCreators ? (

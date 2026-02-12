@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 type Side = 'A' | 'B'
 
@@ -40,14 +40,6 @@ type PresidentableUI = {
   role: string
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
-
-if (!supabaseUrl || !anonKey) {
-  throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
-}
-
-const supabase = createClient(supabaseUrl, anonKey)
 const BUCKET = 'cards'
 const LS_PRES_KEY = 'voteclash_pres_voted'
 
@@ -65,70 +57,14 @@ const PRES_META: Record<string, { age: number; role: string }> = {
 }
 
 const DEFAULT_PRESIDENTABLES: PresidentableUI[] = [
-  {
-    id: 'duterte-sara',
-    name: 'Sara Duterte',
-    age: 47,
-    role: 'Vice President of the Philippines',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'hontiveros-risa',
-    name: 'Risa Hontiveros',
-    age: 59,
-    role: 'Senator of the Philippines',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'pacquiao-manny',
-    name: 'Manny Pacquiao',
-    age: 47,
-    role: 'Boxing Legend and Former Senator',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'poe-grace',
-    name: 'Grace Poe',
-    age: 57,
-    role: 'Former Senator of the Philippines',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'remulla-jonvic',
-    name: 'Jonvic Remulla',
-    age: 58,
-    role: 'Secretary of the Interior and Local Government',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'robredo-leni',
-    name: 'Leni Robredo',
-    age: 60,
-    role: 'Mayor, Naga City',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'romualdez-martin',
-    name: 'Martin Romualdez',
-    age: 62,
-    role: 'Former Speaker of the House',
-    imgUrl: '',
-    total_votes: 0,
-  },
-  {
-    id: 'tulfo-raffy',
-    name: 'Raffy Tulfo',
-    age: 65,
-    role: 'Senator of the Philippines',
-    imgUrl: '',
-    total_votes: 0,
-  },
+  { id: 'duterte-sara', name: 'Sara Duterte', age: 47, role: 'Vice President of the Philippines', imgUrl: '', total_votes: 0 },
+  { id: 'hontiveros-risa', name: 'Risa Hontiveros', age: 59, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
+  { id: 'pacquiao-manny', name: 'Manny Pacquiao', age: 47, role: 'Boxing Legend and Former Senator', imgUrl: '', total_votes: 0 },
+  { id: 'poe-grace', name: 'Grace Poe', age: 57, role: 'Former Senator of the Philippines', imgUrl: '', total_votes: 0 },
+  { id: 'remulla-jonvic', name: 'Jonvic Remulla', age: 58, role: 'Secretary of the Interior and Local Government', imgUrl: '', total_votes: 0 },
+  { id: 'robredo-leni', name: 'Leni Robredo', age: 60, role: 'Mayor, Naga City', imgUrl: '', total_votes: 0 },
+  { id: 'romualdez-martin', name: 'Martin Romualdez', age: 62, role: 'Former Speaker of the House', imgUrl: '', total_votes: 0 },
+  { id: 'tulfo-raffy', name: 'Raffy Tulfo', age: 65, role: 'Senator of the Philippines', imgUrl: '', total_votes: 0 },
 ]
 
 function safeImg(src?: string) {
@@ -184,15 +120,7 @@ function Media({ src, alt }: { src: string | null; alt: string }) {
   )
 }
 
-function AutoFitQuote({
-  text,
-  maxPx = 22,
-  minPx = 12,
-}: {
-  text: string
-  maxPx?: number
-  minPx?: number
-}) {
+function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: number; minPx?: number }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const pRef = useRef<HTMLParagraphElement | null>(null)
 
@@ -360,15 +288,10 @@ function Presidentables({
           <div className="text-lg font-semibold tracking-tight text-neutral-900">Presidentables</div>
           <div className="text-xs text-neutral-500">Pick ONE candidate</div>
         </div>
-        {selectedId ? (
-          <div className="text-xs text-neutral-500">Selected</div>
-        ) : (
-          <div className="text-xs text-neutral-400">One vote only</div>
-        )}
+        {selectedId ? <div className="text-xs text-neutral-500">Selected</div> : <div className="text-xs text-neutral-400">One vote only</div>}
       </div>
 
-      {/* ✅ DESKTOP: force 2 rows + fit viewport (no scroll) */}
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:grid-rows-2 lg:gap-4 lg:h-[calc(100vh-260px)]">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
@@ -378,17 +301,13 @@ function Presidentables({
               disabled={pending}
               className={[
                 'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition',
-                'w-full', // ✅ fill grid column (prevents tiny centered cards)
                 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
                 isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
                 pending ? 'opacity-80' : 'hover:bg-neutral-50',
 
-                // ✅ MOBILE unchanged
-                'h-[18vh] min-h-[120px] max-h-[160px]',
-
-                // ✅ DESKTOP: each card fills its grid cell, remove caps
-                'lg:h-full lg:min-h-0 lg:max-h-none',
+                // ✅ FIX: 4:5 cards (your photos are 4:5)
+                'aspect-[4/5]',
               ].join(' ')}
               style={{ minWidth: 0 }}
             >
@@ -397,8 +316,8 @@ function Presidentables({
                   src={safeImg(p.imgUrl)}
                   alt={p.name}
                   draggable={false}
-                  // ✅ keep your behavior: contain on mobile, cover on desktop
-                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-top"
+                  // ✅ FIX: 4:5 photo => cover fits without chopping (because container is 4:5)
+                  className="h-full w-full object-cover object-top bg-black"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = safeImg()
                   }}
@@ -576,7 +495,6 @@ export default function VotingGrid({
 
   return (
     <div className="relative" id="creator-battles">
-      {/* ✅ MOBILE = vertical (A then VS then B). DESKTOP unchanged. */}
       <div className="lg:hidden space-y-3">
         <CreatorCard c={left} voting={voting} onVote={() => voteCreator(left.id)} />
 
