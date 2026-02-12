@@ -282,7 +282,7 @@ function Presidentables({
 
   return (
     <section className="mb-0">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2 lg:scale-[0.75] lg:origin-top">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
