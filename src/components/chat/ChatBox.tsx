@@ -1,102 +1,90 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-type ChatMsg = {
+type Msg = {
   id: string
   created_at: string
-  anon_id: string
-  display_name_snapshot: string
+  anon_id: string | null
+  display_name: string | null
   text: string
 }
 
-const LS_ANON = 'vc_chat_anon_id'
-const LS_NAME = 'vc_chat_base_name'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
-function timeHM(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+const supabase = createClient(supabaseUrl, anonKey)
+
+const LS_ANON_ID = 'voteclash_anon_id'
 
 function makeAnonId() {
-  // Works in modern browsers. If you need older support, tell me.
-  return crypto.randomUUID()
+  // crypto.randomUUID is best, fallback otherwise
+  const c: any = typeof window !== 'undefined' ? (window as any).crypto : null
+  if (c?.randomUUID) return c.randomUUID()
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`
 }
 
-function validBaseName(n: string) {
-  const t = n.trim()
-  return /^[a-zA-Z0-9_]{2,16}$/.test(t)
+function shortHash(s: string) {
+  // tiny deterministic hash -> 3 hex chars
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  const hex = (h >>> 0).toString(16).toUpperCase()
+  return hex.slice(0, 3).padEnd(3, '0')
 }
 
 export default function ChatBox() {
-  const [msgs, setMsgs] = useState<ChatMsg[]>([])
-  const [loading, setLoading] = useState(true)
-
+  const [ready, setReady] = useState(false)
   const [anonId, setAnonId] = useState<string>('')
-  const [baseName, setBaseName] = useState<string>('')
-  const [nameEdit, setNameEdit] = useState<string>('')
+  const displayName = useMemo(() => {
+    if (!anonId) return 'Anon #---'
+    return `Anon #${shortHash(anonId)}`
+  }, [anonId])
 
+  const [messages, setMessages] = useState<Msg[]>([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
-  const needsName = useMemo(() => !baseName, [baseName])
+  useEffect(() => {
+    // init anon id
+    try {
+      const existing = localStorage.getItem(LS_ANON_ID)
+      const id = existing && existing.length >= 8 ? existing : makeAnonId()
+      localStorage.setItem(LS_ANON_ID, id)
+      setAnonId(id)
+    } catch {
+      setAnonId(makeAnonId())
+    }
+    setReady(true)
+  }, [])
 
-  const canSend = useMemo(() => {
-    const t = text.trim()
-    return !needsName && !!anonId && t.length > 0 && t.length <= 300 && !sending
-  }, [text, needsName, anonId, sending])
-
-  function scrollToBottom() {
-    const el = scrollerRef.current
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-  }
-
-  async function loadInitial() {
-    setLoading(true)
+  async function loadLatest() {
     setErr(null)
-
     const { data, error } = await supabase
       .from('chat_messages')
-      .select('id, created_at, anon_id, display_name_snapshot, text')
+      .select('id,created_at,anon_id,display_name,text')
       .order('created_at', { ascending: false })
       .limit(50)
 
     if (error) {
-      setErr('Failed to load chat.')
-      setMsgs([])
-    } else {
-      const rows = (data ?? []) as ChatMsg[]
-      setMsgs(rows.reverse())
+      setErr(error.message)
+      return
     }
 
-    setLoading(false)
-    requestAnimationFrame(scrollToBottom)
+    const list = (data ?? []) as Msg[]
+    setMessages(list.reverse())
   }
 
   useEffect(() => {
-    // init anon id + base name
-    try {
-      let a = localStorage.getItem(LS_ANON) || ''
-      if (!a) {
-        a = makeAnonId()
-        localStorage.setItem(LS_ANON, a)
-      }
-      setAnonId(a)
+    if (!ready) return
 
-      const n = (localStorage.getItem(LS_NAME) || '').trim()
-      if (n) setBaseName(n)
-      setNameEdit(n)
-    } catch {
-      // If localStorage blocked, still works but identity won't persist
-      setAnonId(makeAnonId())
-    }
-
-    loadInitial()
+    loadLatest()
 
     const channel = supabase
       .channel('chat_messages_live')
@@ -104,17 +92,18 @@ export default function ChatBox() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          const m = payload.new as ChatMsg
-          setMsgs((prev) => {
+          const row = payload.new as any
+          const m: Msg = {
+            id: String(row.id),
+            created_at: String(row.created_at),
+            anon_id: row.anon_id ?? null,
+            display_name: row.display_name ?? null,
+            text: String(row.text ?? ''),
+          }
+          setMessages((prev) => {
+            // avoid dupes
             if (prev.some((x) => x.id === m.id)) return prev
             return [...prev, m]
-          })
-
-          requestAnimationFrame(() => {
-            const el = scrollerRef.current
-            if (!el) return
-            const dist = el.scrollHeight - (el.scrollTop + el.clientHeight)
-            if (dist < 160) scrollToBottom()
           })
         }
       )
@@ -123,120 +112,85 @@ export default function ChatBox() {
     return () => {
       supabase.removeChannel(channel)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [ready])
 
-  function saveName() {
-    const n = nameEdit.trim()
-    if (!validBaseName(n)) {
-      setErr('Name must be 2–16 chars: letters/numbers/underscore only.')
-      return
-    }
-    setErr(null)
-    setBaseName(n)
-    try {
-      localStorage.setItem(LS_NAME, n)
-    } catch {}
-  }
+  useEffect(() => {
+    // auto-scroll to bottom on new messages
+    const el = scrollerRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [messages.length])
 
   async function send() {
+    if (sending) return
     const t = text.trim()
-    if (!t || !anonId || !baseName) return
+    if (!t) return
+    if (t.length > 280) {
+      setErr('Max 280 chars.')
+      return
+    }
 
     setSending(true)
     setErr(null)
 
-    try {
-      const res = await fetch('/api/chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ anon_id: anonId, base_name: baseName, text: t }),
-      })
+    const { error } = await supabase.from('chat_messages').insert({
+      anon_id: anonId,
+      display_name: displayName,
+      text: t,
+    })
 
-      if (!res.ok) {
-        const j = await res.json().catch(() => null)
-        setErr(j?.error ?? 'Failed to send.')
-      } else {
-        setText('')
-        requestAnimationFrame(scrollToBottom)
-      }
-    } catch {
-      setErr('Failed to send.')
-    } finally {
+    if (error) {
+      setErr(error.message)
       setSending(false)
+      return
     }
+
+    setText('')
+    setSending(false)
   }
 
+  if (!ready) return null
+
   return (
-    <>
-      <div
-        className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3"
-        ref={scrollerRef}
-      >
-        {loading ? (
-          <div className="text-white/35 text-xs">Loading…</div>
-        ) : err ? (
-          <div className="text-red-300/80 text-xs">{err}</div>
-        ) : msgs.length === 0 ? (
+    <div className="flex flex-col min-h-0">
+      <div className="mt-3 flex-1 min-h-0 overflow-auto rounded-2xl border border-white/10 bg-black/20 p-3" ref={scrollerRef}>
+        {messages.length === 0 ? (
           <div className="text-white/35 text-xs">No messages yet.</div>
         ) : (
           <div className="space-y-2">
-            {msgs.map((m) => (
-              <div key={m.id} className="text-[13px] leading-5 break-words">
-                <span className="text-white font-extrabold">{m.display_name_snapshot}</span>
-                <span className="text-white/40"> · {timeHM(m.created_at)}</span>
-                <span className="text-white/80">: {m.text}</span>
+            {messages.map((m) => (
+              <div key={m.id} className="text-sm leading-snug">
+                <span className="text-white/70 font-extrabold">
+                  {m.display_name || 'Anon'}
+                </span>
+                <span className="text-white/35">:</span>{' '}
+                <span className="text-white">{m.text}</span>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Name gate (local only) */}
-      {needsName ? (
-        <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3">
-          <div className="text-white font-extrabold">Set display name</div>
-          <div className="mt-1 text-white/60 text-xs">
-            Local only. No login. Letters/numbers/underscore.
-          </div>
+      {err ? <div className="mt-2 text-xs text-red-300 break-words">{err}</div> : null}
 
-          <div className="mt-3 flex items-center gap-2">
-            <input
-              className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
-              placeholder="Heri"
-              value={nameEdit}
-              onChange={(e) => setNameEdit(e.target.value)}
-              maxLength={16}
-              disabled={sending}
-            />
-            <button
-              className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
-              onClick={saveName}
-              disabled={sending}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-3 flex items-center gap-2">
-          <input
-            className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
-            placeholder="Type your message…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={sending}
-            maxLength={300}
-          />
-          <button
-            className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
-            onClick={send}
-            disabled={!canSend}
-          >
-            {sending ? '…' : 'Send'}
-          </button>
-        </div>
-      )}
-    </>
+      <div className="mt-3 flex-shrink-0 flex items-center gap-2">
+        <input
+          className="flex-1 min-w-0 h-11 rounded-2xl border border-white/10 bg-white/5 px-4 text-white placeholder:text-white/35 outline-none"
+          placeholder="Type your message…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') send()
+          }}
+        />
+        <button
+          className="h-11 px-5 rounded-2xl bg-white text-black font-extrabold disabled:opacity-60"
+          onClick={send}
+          disabled={sending}
+        >
+          {sending ? '...' : 'Send'}
+        </button>
+      </div>
+    </div>
   )
 }
