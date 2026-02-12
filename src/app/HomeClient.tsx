@@ -13,24 +13,6 @@ function formatVotes(v: number) {
   return Number(v || 0).toLocaleString('en-US')
 }
 
-function ShareButton() {
-  return (
-    <button
-      type="button"
-      aria-label="Share on Facebook"
-      title="Share on Facebook"
-      className="h-10 w-10 rounded-2xl border border-white/10 bg-black/20 flex items-center justify-center hover:bg-white/10 transition"
-      onClick={() => {
-        // Placeholder (you can wire a real share link later)
-        // Example later: window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}`, '_blank')
-      }}
-    >
-      {/* Minimal FB-ish glyph */}
-      <span className="text-white/80 font-extrabold text-lg leading-none">f</span>
-    </button>
-  )
-}
-
 export default function HomeClient({
   presidentables,
   creatorsTop,
@@ -61,26 +43,46 @@ export default function HomeClient({
 
   if (!hydrated) return null
 
-  const title = showCreators ? 'Shallow Or Follow' : 'CHOOSE YOUR NEXT PRESIDENT'
-  const notice = showCreators ? null : 'One vote only'
+  const isPres = !showCreators
+  const title = isPres ? 'CHOOSE YOUR NEXT PRESIDENT' : 'Shallow Or Follow'
+  const notice = isPres ? 'ONE VOTE ONLY' : null
 
   return (
     <main className="min-h-screen bg-transparent">
       {/* ================= MOBILE ================= */}
       <div className="lg:hidden px-4 pt-4 pb-4 space-y-3">
-        <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
-          <div className="flex items-start justify-between gap-3">
+        <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-5 py-5 backdrop-blur">
+          {/* subtle top sheen */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+
+          <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-white font-extrabold text-[22px] leading-[1.05] tracking-tight">
+              <div
+                className={[
+                  'text-white font-extrabold uppercase',
+                  'tracking-[-0.02em] leading-[0.96]',
+                  isPres ? 'text-[26px]' : 'text-[24px]',
+                ].join(' ')}
+              >
                 {title}
               </div>
+
               {notice ? (
-                <div className="mt-2 text-white/70 text-xs font-semibold">{notice}</div>
+                <div className="mt-3 inline-flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-white" />
+                  <span className="text-white font-extrabold tracking-[0.22em] text-[11px] uppercase">
+                    {notice}
+                  </span>
+                  <span className="h-2 w-2 rounded-full bg-white/50" />
+                </div>
               ) : null}
             </div>
 
-            {/* Small FB share space */}
-            <ShareButton />
+            {/* share slot (empty, no icon yet) */}
+            <div
+              aria-label="Share slot"
+              className="h-10 w-10 rounded-2xl border border-white/10 bg-black/15"
+            />
           </div>
         </div>
 
@@ -136,30 +138,43 @@ export default function HomeClient({
             ) : null}
 
             <div className="flex flex-col gap-6">
-              {/* Page title card */}
-              <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-5 shadow-lg backdrop-blur">
-                <div className="flex items-start justify-between gap-6">
-                  <div className="flex-[2] min-w-0">
-                    <h1 className="text-white font-extrabold tracking-tight leading-[1.02] text-[42px]">
+              {/* Title card */}
+              <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-7 py-6 shadow-lg backdrop-blur">
+                {/* cinematic glow bands (subtle, not cheesy) */}
+                <div className="pointer-events-none absolute -top-24 left-0 right-0 h-48 bg-gradient-to-b from-white/12 via-transparent to-transparent" />
+                <div className="pointer-events-none absolute -bottom-24 left-0 right-0 h-48 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+
+                <div className="relative flex items-start justify-between gap-6">
+                  <div className="min-w-0 flex-1">
+                    <h1
+                      className={[
+                        'text-white font-extrabold uppercase',
+                        'leading-[0.92] tracking-[-0.03em]',
+                        isPres ? 'text-[54px]' : 'text-[46px]',
+                      ].join(' ')}
+                    >
                       {title}
                     </h1>
 
                     {notice ? (
-                      <div className="mt-2 text-white/70 text-sm font-semibold">
-                        {notice}
+                      <div className="mt-4 flex items-center gap-3">
+                        <div className="inline-flex items-center gap-3 rounded-full border border-white/18 bg-black/25 px-5 py-2">
+                          <span className="h-2.5 w-2.5 rounded-full bg-white" />
+                          <span className="text-white font-extrabold tracking-[0.30em] text-[12px] uppercase">
+                            {notice}
+                          </span>
+                          <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
+                        </div>
+                        <div className="text-white/55 text-sm font-semibold">
+                          Choose carefully.
+                        </div>
                       </div>
                     ) : null}
                   </div>
 
-                  {/* Right: FB share + ADS space (unchanged layout) */}
-                  <div className="flex items-start gap-3 flex-[1] min-w-[260px] justify-end">
-                    <ShareButton />
-
-                    <div className="h-[70px] flex-1 rounded-2xl border border-white/10 bg-black/20 flex items-center justify-center">
-                      <div className="text-white/60 font-extrabold tracking-[0.35em] text-xs uppercase">
-                        ADS
-                      </div>
-                    </div>
+                  {/* share slot (empty, no icon yet) */}
+                  <div className="shrink-0">
+                    <div className="h-[52px] w-[52px] rounded-2xl border border-white/10 bg-black/15" />
                   </div>
                 </div>
               </div>
@@ -180,9 +195,7 @@ export default function HomeClient({
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-2">
-                    Creators Ranking
-                  </div>
+                  <div className="text-white font-extrabold tracking-tight mb-2">Creators Ranking</div>
                   <div className="space-y-2">
                     {creatorsTop.slice(0, 20).map((c, idx) => (
                       <div
