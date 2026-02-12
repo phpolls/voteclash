@@ -1,4 +1,3 @@
-// src/components/VotingGrid.tsx
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -162,7 +161,6 @@ function AutoFitQuote({ text, maxPx = 22, minPx = 12 }: { text: string; maxPx?: 
     p.style.fontSize = `${best}px`
     setFontPx(best)
 
-    // if even minPx doesn't fit, allow scroll
     p.style.fontSize = `${minPx}px`
     const minFits = fitsAt(minPx)
     setScrollable(!minFits)
@@ -265,74 +263,96 @@ function Presidentables({
     const list = Array.isArray(presidentables) && presidentables.length > 0 ? presidentables : []
     if (list.length === 0) return DEFAULT_PRESIDENTABLES
 
-    return list
-      .map((p) => {
-        const meta = PRES_META[p.id] ?? { age: 0, role: '' }
-        return {
-          id: p.id,
-          name: p.name,
-          imgUrl: p.imgUrl,
-          total_votes: Number(p.total_votes ?? 0),
-          age: meta.age,
-          role: meta.role,
-        }
-      })
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+    // ✅ Manual order with ONLY Duterte <-> Pacquiao swap
+    const ORDER = [
+      'pacquiao-manny', // swapped up
+      'hontiveros-risa',
+      'duterte-sara', // swapped down
+      'poe-grace',
+      'remulla-jonvic',
+      'robredo-leni',
+      'romualdez-martin',
+      'tulfo-raffy',
+    ]
+
+    const mapped = list.map((p) => {
+      const meta = PRES_META[p.id] ?? { age: 0, role: '' }
+      return {
+        id: p.id,
+        name: p.name,
+        imgUrl: p.imgUrl,
+        total_votes: Number(p.total_votes ?? 0),
+        age: meta.age,
+        role: meta.role,
+      }
+    })
+
+    // Put known IDs in ORDER, keep any unknown ones at the end
+    return mapped.sort((a, b) => {
+      const ia = ORDER.indexOf(a.id)
+      const ib = ORDER.indexOf(b.id)
+      const aa = ia === -1 ? 999 : ia
+      const bb = ib === -1 ? 999 : ib
+      return aa - bb
+    })
   }, [presidentables])
 
   return (
     <section className="mb-0">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2 lg:scale-[0.75] lg:origin-top">
-        {merged.map((p) => {
-          const isSelected = selectedId === p.id
-          return (
-            <button
-              key={p.id}
-              onClick={() => onPick(p.id)}
-              disabled={pending}
-              className={[
-                'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition',
-                'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
-                isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
-                pending ? 'opacity-80' : 'hover:bg-neutral-50',
-                'aspect-[4/5]',
-              ].join(' ')}
-              style={{ minWidth: 0 }}
-            >
-              <div className="absolute inset-0">
-                <img
-                  src={safeImg(p.imgUrl)}
-                  alt={p.name}
-                  draggable={false}
-                  className="h-full w-full object-cover object-top bg-black"
-                  onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).src = safeImg()
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />
-              </div>
-
-              <div className="relative flex h-full flex-col justify-end p-3 lg:p-3">
-                <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
-                  {p.name}, {p.age}
-                </div>
-                <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
-                  <div
-                    className="whitespace-normal break-words overflow-hidden"
-                    style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical' as any,
+      {/* ✅ WEB ONLY: shrink to 75% so all 8 fit better */}
+      <div className="lg:scale-[0.75] lg:origin-top">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
+          {merged.map((p) => {
+            const isSelected = selectedId === p.id
+            return (
+              <button
+                key={p.id}
+                onClick={() => onPick(p.id)}
+                disabled={pending}
+                className={[
+                  'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition',
+                  'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
+                  isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
+                  pending ? 'opacity-80' : 'hover:bg-neutral-50',
+                  'aspect-[4/5]',
+                ].join(' ')}
+                style={{ minWidth: 0 }}
+              >
+                <div className="absolute inset-0">
+                  <img
+                    src={safeImg(p.imgUrl)}
+                    alt={p.name}
+                    draggable={false}
+                    className="h-full w-full object-cover object-top bg-black"
+                    onError={(e) => {
+                      ;(e.currentTarget as HTMLImageElement).src = safeImg()
                     }}
-                  >
-                    {p.role}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />
+                </div>
+
+                <div className="relative flex h-full flex-col justify-end p-3 lg:p-3">
+                  <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
+                    {p.name}, {p.age}
+                  </div>
+                  <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
+                    <div
+                      className="whitespace-normal break-words overflow-hidden"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as any,
+                      }}
+                    >
+                      {p.role}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
-          )
-        })}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

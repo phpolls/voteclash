@@ -1,8 +1,8 @@
-// src/app/leaderboards/LeaderboardsClient.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import ChatBox from '@/components/chat/ChatBox'
+import ShareFacebookButton from '@/components/ShareFacebookButton'
 
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
 
@@ -67,7 +67,10 @@ export default function LeaderboardsClient({
   return (
     <main className="min-h-screen bg-transparent">
       <div className="px-4 pt-4 pb-6 space-y-4">
-        {/* ✅ REMOVED: VoteClash / Results header block */}
+        {/* ✅ Share on leaderboards (mobile) */}
+        <div className="flex justify-end">
+          <ShareFacebookButton />
+        </div>
 
         <RankList title="Presidentiables" items={presidentiablesTop} limit={8} />
         <RankList title="Top Follows" items={creatorsTop} limit={20} />
