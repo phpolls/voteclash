@@ -1,8 +1,10 @@
+// src/app/HomeClient.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import VotingGrid from '@/components/VotingGrid'
 import ChatBox from '@/components/chat/ChatBox'
+import Arena2HWordmark from '@/components/Arena2HWordmark'
 
 type PresidentableUI = { id: string; name: string; imgUrl: string; total_votes: number }
 type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: number }
@@ -44,45 +46,55 @@ export default function HomeClient({
   if (!hydrated) return null
 
   const isPres = !showCreators
-  const title = isPres ? 'CHOOSE YOUR NEXT PRESIDENT' : 'Shallow Or Follow'
-  const notice = isPres ? 'ONE VOTE ONLY' : null
+  const title = isPres ? 'CHOOSE YOUR NEXT PRESIDENT' : 'SHALLOW OR FOLLOW'
+  const showOneVote = isPres
 
   return (
     <main className="min-h-screen bg-transparent">
       {/* ================= MOBILE ================= */}
       <div className="lg:hidden px-4 pt-4 pb-4 space-y-3">
-        <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-5 py-5 backdrop-blur">
-          {/* subtle top sheen */}
+        {/* ✅ single compact hero: Arena2H + contest title + one-vote badge + share slot */}
+        <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-4 py-4 backdrop-blur">
+          {/* subtle sheen (doesn't add height) */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
 
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div
-                className={[
-                  'text-white font-extrabold uppercase',
-                  'tracking-[-0.02em] leading-[0.96]',
-                  isPres ? 'text-[26px]' : 'text-[24px]',
-                ].join(' ')}
-              >
-                {title}
+              {/* Arena2H (small, crisp) */}
+              <div className="leading-none">
+                <div className="scale-[0.88] origin-left">
+                  <Arena2HWordmark />
+                </div>
               </div>
 
-              {notice ? (
-                <div className="mt-3 inline-flex items-center gap-2">
+              {/* Title (stylized, not boring) */}
+              <div
+                className={[
+                  'mt-2 uppercase font-extrabold',
+                  'tracking-[-0.03em] leading-[0.92]',
+                  'text-[22px]',
+                ].join(' ')}
+              >
+                <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
+                  {title}
+                </span>
+              </div>
+
+              {showOneVote ? (
+                <div className="mt-2 inline-flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-white" />
-                  <span className="text-white font-extrabold tracking-[0.22em] text-[11px] uppercase">
-                    {notice}
+                  <span className="text-white font-extrabold tracking-[0.28em] text-[11px] uppercase">
+                    ONE VOTE ONLY
                   </span>
-                  <span className="h-2 w-2 rounded-full bg-white/50" />
+                  <span className="h-2 w-2 rounded-full bg-white/40" />
                 </div>
               ) : null}
             </div>
 
-            {/* share slot (empty, no icon yet) */}
-            <div
-              aria-label="Share slot"
-              className="h-10 w-10 rounded-2xl border border-white/10 bg-black/15"
-            />
+            {/* Share slot (empty, no icon yet) */}
+            <div className="shrink-0">
+              <div className="h-10 w-10 rounded-2xl border border-white/10 bg-black/15" />
+            </div>
           </div>
         </div>
 
@@ -91,10 +103,7 @@ export default function HomeClient({
         </div>
 
         {showCreators ? (
-          <a
-            href="/leaderboards"
-            className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold"
-          >
+          <a href="/leaderboards" className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold">
             Show Results
           </a>
         ) : null}
@@ -112,9 +121,7 @@ export default function HomeClient({
             {showCreators ? (
               <div className="lg:sticky lg:top-6 self-start">
                 <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-2">
-                    Presidentiables Ranking
-                  </div>
+                  <div className="text-white font-extrabold tracking-tight mb-2">Presidentiables Ranking</div>
                   <div className="space-y-2">
                     {presidentiablesTop.slice(0, 20).map((p, idx) => (
                       <div
@@ -122,14 +129,10 @@ export default function HomeClient({
                         className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 text-white/70 font-extrabold tabular-nums">
-                            {idx + 1}
-                          </div>
+                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
                           <div className="text-white font-semibold truncate">{p.name}</div>
                         </div>
-                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">
-                          {formatVotes(p.votes)}
-                        </div>
+                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(p.votes)}</div>
                       </div>
                     ))}
                   </div>
@@ -137,42 +140,47 @@ export default function HomeClient({
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-6">
-              {/* Title card */}
-              <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-7 py-6 shadow-lg backdrop-blur">
-                {/* cinematic glow bands (subtle, not cheesy) */}
-                <div className="pointer-events-none absolute -top-24 left-0 right-0 h-48 bg-gradient-to-b from-white/12 via-transparent to-transparent" />
-                <div className="pointer-events-none absolute -bottom-24 left-0 right-0 h-48 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+            <div className="flex flex-col gap-5">
+              {/* ✅ single compact hero (no ADS, no extra header, pulls cards up) */}
+              <div className="relative overflow-hidden rounded-3xl border border-white/12 bg-white/6 px-6 py-5 shadow-lg backdrop-blur">
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
 
                 <div className="relative flex items-start justify-between gap-6">
                   <div className="min-w-0 flex-1">
+                    {/* Arena2H */}
+                    <div className="leading-none">
+                      <div className="scale-[0.92] origin-left">
+                        <Arena2HWordmark />
+                      </div>
+                    </div>
+
+                    {/* Title (cinematic) */}
                     <h1
                       className={[
-                        'text-white font-extrabold uppercase',
-                        'leading-[0.92] tracking-[-0.03em]',
-                        isPres ? 'text-[54px]' : 'text-[46px]',
+                        'mt-2 uppercase font-extrabold',
+                        'tracking-[-0.04em] leading-[0.90]',
+                        isPres ? 'text-[44px]' : 'text-[40px]',
                       ].join(' ')}
                     >
-                      {title}
+                      <span className="bg-gradient-to-r from-white via-white to-white/65 bg-clip-text text-transparent">
+                        {title}
+                      </span>
                     </h1>
 
-                    {notice ? (
-                      <div className="mt-4 flex items-center gap-3">
-                        <div className="inline-flex items-center gap-3 rounded-full border border-white/18 bg-black/25 px-5 py-2">
+                    {showOneVote ? (
+                      <div className="mt-3">
+                        <div className="inline-flex items-center gap-3 rounded-full border border-white/16 bg-black/25 px-5 py-2">
                           <span className="h-2.5 w-2.5 rounded-full bg-white" />
-                          <span className="text-white font-extrabold tracking-[0.30em] text-[12px] uppercase">
-                            {notice}
+                          <span className="text-white font-extrabold tracking-[0.32em] text-[12px] uppercase">
+                            ONE VOTE ONLY
                           </span>
-                          <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
-                        </div>
-                        <div className="text-white/55 text-sm font-semibold">
-                          Choose carefully.
+                          <span className="h-2.5 w-2.5 rounded-full bg-white/35" />
                         </div>
                       </div>
                     ) : null}
                   </div>
 
-                  {/* share slot (empty, no icon yet) */}
+                  {/* Share slot (empty) */}
                   <div className="shrink-0">
                     <div className="h-[52px] w-[52px] rounded-2xl border border-white/10 bg-black/15" />
                   </div>
@@ -203,14 +211,10 @@ export default function HomeClient({
                         className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-6 text-white/70 font-extrabold tabular-nums">
-                            {idx + 1}
-                          </div>
+                          <div className="w-6 text-white/70 font-extrabold tabular-nums">{idx + 1}</div>
                           <div className="text-white font-semibold truncate">{c.name}</div>
                         </div>
-                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">
-                          {formatVotes(c.votes)}
-                        </div>
+                        <div className="text-white/70 font-bold tabular-nums whitespace-nowrap">{formatVotes(c.votes)}</div>
                       </div>
                     ))}
                   </div>
