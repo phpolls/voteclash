@@ -367,7 +367,8 @@ function Presidentables({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+      {/* ✅ DESKTOP: force 2 rows + fit viewport (no scroll) */}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:grid-rows-2 lg:gap-4 lg:h-[calc(100vh-260px)]">
         {merged.map((p) => {
           const isSelected = selectedId === p.id
           return (
@@ -377,13 +378,17 @@ function Presidentables({
               disabled={pending}
               className={[
                 'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition',
-                'w-full', // ✅ IMPORTANT: fill the grid column (fixes tiny centered cards)
+                'w-full', // ✅ fill grid column (prevents tiny centered cards)
                 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
                 isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
                 pending ? 'opacity-80' : 'hover:bg-neutral-50',
-                // ✅ MOBILE stays the same; DESKTOP becomes true 4:5 cards
-                'h-[18vh] min-h-[120px] max-h-[160px] lg:h-auto lg:aspect-[4/5]',
+
+                // ✅ MOBILE unchanged
+                'h-[18vh] min-h-[120px] max-h-[160px]',
+
+                // ✅ DESKTOP: each card fills its grid cell, remove caps
+                'lg:h-full lg:min-h-0 lg:max-h-none',
               ].join(' ')}
               style={{ minWidth: 0 }}
             >
@@ -392,8 +397,8 @@ function Presidentables({
                   src={safeImg(p.imgUrl)}
                   alt={p.name}
                   draggable={false}
-                  // ✅ Full-bleed cover, face-safe crop anchor
-                  className="h-full w-full object-cover object-top"
+                  // ✅ keep your behavior: contain on mobile, cover on desktop
+                  className="h-full w-full object-contain bg-black lg:object-cover lg:object-top"
                   onError={(e) => {
                     ;(e.currentTarget as HTMLImageElement).src = safeImg()
                   }}
