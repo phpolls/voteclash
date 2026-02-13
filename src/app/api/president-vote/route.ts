@@ -12,8 +12,8 @@ const NO_STORE_HEADERS = {
   Expires: '0',
 }
 
-function getClientIp(): string {
-  const h = headers()
+async function getClientIp(): Promise<string> {
+  const h = await headers()
 
   const vercel = h.get('x-vercel-forwarded-for')
   if (vercel) return vercel.split(',')[0].trim()
@@ -62,7 +62,8 @@ export async function POST(req: Request) {
     }
 
     // IP cap
-    const ipHash = hashIp(getClientIp())
+    const ipHash = hashIp(await getClientIp())
+
     const { data: allowed, error: capErr } = await db.rpc('check_and_bump_pres_ip_cap', {
       p_ip_hash: ipHash,
       p_limit: MAX_PER_IP_PER_DAY,
@@ -74,24 +75,31 @@ export async function POST(req: Request) {
 
     if (!allowed) {
       return NextResponse.json(
-        { ok: false, rateLimited: true, message: `Too many presidential votes from this network today (${MAX_PER_IP_PER_DAY}/day).` },
+        {
+          ok: false,
+          rateLimited: true,
+          limit: MAX_PER_IP_PER_DAY,
+          message: `Too many presidential votes from this network today (${MAX_PER_IP_PER_DAY}/day).`,
+        },
         { status: 429, headers: NO_STORE_HEADERS }
       )
     }
 
-    // Log vote (monitor/rollback)
+    // Log for monitoring/rollback
     const { error: logErr } = await db.from('presidential_vote_log').insert({
       ip_hash: ipHash,
       candidate_slug: candidateSlug,
     })
+
     if (logErr) {
       return NextResponse.json({ ok: false, error: logErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
-    // Increment totals
+    // Increment totals by slug
     const { error: upErr } = await db.rpc('increment_presidentiables_vote_by_slug', {
       candidate_slug: candidateSlug,
     })
+
     if (upErr) {
       return NextResponse.json({ ok: false, error: upErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }

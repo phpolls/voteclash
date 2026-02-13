@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import Script from 'next/script'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -276,13 +275,11 @@ function Presidentables({
   onPick,
   pending,
   selectedId,
-  disabled,
 }: {
   presidentables?: PresidentableDb[]
   onPick: (id: string) => void
   pending: boolean
   selectedId: string | null
-  disabled: boolean
 }) {
   const merged: PresidentableUI[] = useMemo(() => {
     const list = Array.isArray(presidentables) && presidentables.length > 0 ? presidentables : []
@@ -331,15 +328,14 @@ function Presidentables({
               <button
                 key={p.id}
                 onClick={() => onPick(p.id)}
-                disabled={pending || disabled}
+                disabled={pending}
                 className={[
                   'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm',
                   'transition-all duration-200 ease-out',
                   'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
-                  pending ? 'opacity-90' : '',
+                  pending ? 'opacity-90 cursor-not-allowed' : '',
                   'aspect-[4/5]',
-                  disabled ? 'opacity-50 cursor-not-allowed' : '',
                   selectedId
                     ? isSelected
                       ? 'border-cyan-300/60 ring-2 ring-cyan-300/40 shadow-[0_0_30px_rgba(34,211,238,0.25)] scale-[1.02]'
@@ -402,16 +398,6 @@ export default function VotingGrid({
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])
 
-  const [tsToken, setTsToken] = useState<string>('')
-  const [tsReady, setTsReady] = useState(false)
-
-  useEffect(() => {
-    ;(window as any).__a2hTsOk = (token: string) => {
-      setTsToken(token)
-      setTsReady(true)
-    }
-  }, [])
-
   const [presVoteDone, setPresVoteDone] = useState(false)
   const [presVotePending, setPresVotePending] = useState(false)
   const [selectedPresidentId, setSelectedPresidentId] = useState<string | null>(null)
@@ -449,10 +435,7 @@ export default function VotingGrid({
     setLoading(true)
     setError(null)
 
-    const { data, error } = await supabase
-      .from('creators')
-      .select('id,name,quote,total_votes,img_path,side')
-      .limit(500)
+    const { data, error } = await supabase.from('creators').select('id,name,quote,total_votes,img_path,side').limit(500)
 
     if (error) {
       setError(error.message)
@@ -521,11 +504,6 @@ export default function VotingGrid({
   async function pickPresident(id: string) {
     if (presVoteDone || presVotePending) return
 
-    if (!tsToken) {
-      setPresError('Please complete the verification first.')
-      return
-    }
-
     setPresError(null)
     setSelectedPresidentId(id)
     setPresVotePending(true)
@@ -534,35 +512,12 @@ export default function VotingGrid({
       const res = await fetch('/api/president-vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId: id, tsToken }),
+        body: JSON.stringify({ candidateId: id }),
       })
 
-      let payload: any = null
-      try {
-        payload = await res.json()
-      } catch {}
+      const payload = await res.json().catch(() => null)
 
-      if (!res.ok) {
-        const msg =
-          payload?.message ||
-          payload?.error ||
-          (payload?.captchaFailed ? 'Verification failed. Please try again.' : '') ||
-          `Vote failed (${res.status})`
-        setPresError(msg)
-        ;(window as any).turnstile?.reset?.()
-        setTsToken('')
-        return
-      }
-
-      if (payload?.captchaFailed) {
-        setPresError('Verification failed. Please try again.')
-        ;(window as any).turnstile?.reset?.()
-        setTsToken('')
-        return
-      }
-
-      if (payload?.alreadyVoted) {
-        setPresError('You already voted for president.')
+      if (payload?.ok) {
         try {
           localStorage.setItem(LS_PRES_KEY, '1')
         } catch {}
@@ -571,16 +526,9 @@ export default function VotingGrid({
         return
       }
 
-      // success
-      ;(window as any).turnstile?.reset?.()
-      setTsToken('')
-
-      try {
-        localStorage.setItem(LS_PRES_KEY, '1')
-      } catch {}
-
-      setPresVoteDone(true)
-      onPresidentVoted?.()
+      const msg = payload?.message || payload?.error || (res.status === 429 ? 'Too many votes from your network today.' : 'Vote failed.')
+      setPresError(msg)
+      setSelectedPresidentId(null)
     } finally {
       setPresVotePending(false)
     }
@@ -596,42 +544,21 @@ export default function VotingGrid({
   if (!hydrated) return null
 
   if (!presVoteDone) {
-    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
     return (
       <div className="w-full space-y-3">
-        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-
-        <div className="flex items-center justify-center">
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-            <div className="text-white/80 text-xs font-extrabold tracking-[0.22em] uppercase text-center">
-              VERIFY TO VOTE
+        {presError ? (
+          <div className="flex items-center justify-center">
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-center">
+              <div className="text-red-300 text-xs font-semibold">{presError}</div>
             </div>
-            <div className="mt-2 flex justify-center">
-              <div
-                className="cf-turnstile"
-                data-sitekey={siteKey}
-                data-callback="__a2hTsOk"
-                data-theme="dark"
-                data-size="compact"
-              />
-            </div>
-            {!siteKey ? (
-              <div className="mt-2 text-red-400 text-xs text-center">
-                Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY
-              </div>
-            ) : null}
-            {presError ? <div className="mt-2 text-red-300 text-xs text-center">{presError}</div> : null}
-            {!tsReady ? <div className="mt-2 text-white/50 text-[11px] text-center">Complete the check above, then tap a candidate.</div> : null}
           </div>
-        </div>
+        ) : null}
 
         <Presidentables
           presidentables={presidentables}
           onPick={pickPresident}
           pending={presVotePending}
           selectedId={selectedPresidentId}
-          disabled={!tsToken}
         />
       </div>
     )
