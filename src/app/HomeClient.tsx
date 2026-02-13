@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import VotingGrid from '@/components/VotingGrid'
 import ChatBox from '@/components/chat/ChatBox'
 import ShareFacebookButton from '@/components/ShareFacebookButton'
@@ -15,23 +16,13 @@ function formatVotes(v: any) {
   return Number.isFinite(n) ? n.toLocaleString('en-US') : '0'
 }
 
-/**
- * ✅ A (tight but safe):
- * - gap-2 -> gap-1
- * - rank w-6 -> w-5
- * - px-3 -> px-2.5
- * Rank - Name - Votes only. No scrolling. No ellipsis class.
- */
 function RankRow({ idx, name, votes }: { idx: number; name: string; votes: number }) {
   return (
     <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-black/20 px-2.5 py-2">
-
-      {/* Rank — natural width (no reserved box anymore) */}
       <span className="text-white/70 font-extrabold tabular-nums text-[12px] xl:text-[13px]">
         {idx}
       </span>
 
-      {/* Name — takes ALL remaining width */}
       <span
         title={name}
         className="flex-1 min-w-0 text-white font-semibold whitespace-nowrap overflow-hidden text-[12px] xl:text-[13px] tracking-tight"
@@ -39,15 +30,12 @@ function RankRow({ idx, name, votes }: { idx: number; name: string; votes: numbe
         {name}
       </span>
 
-      {/* Votes — only as wide as the number itself */}
       <span className="text-right text-[12px] xl:text-[13px] font-extrabold tabular-nums text-white/85 whitespace-nowrap">
         {formatVotes(votes)}
       </span>
-
     </div>
   )
 }
-
 
 export default function HomeClient({
   presidentables,
@@ -58,6 +46,7 @@ export default function HomeClient({
   creatorsTop: SidebarRow[]
   presidentiablesTop: SidebarRow[]
 }) {
+  const router = useRouter()
   const [hydrated, setHydrated] = useState(false)
   const [showCreators, setShowCreators] = useState(false)
 
@@ -75,6 +64,9 @@ export default function HomeClient({
       localStorage.setItem(LS_KEY, '1')
     } catch {}
     setShowCreators(true)
+
+    // ✅ force fresh server props (prod-safe if page is force-dynamic/noStore)
+    router.refresh()
   }
 
   if (!hydrated) return null
@@ -123,12 +115,16 @@ export default function HomeClient({
         </div>
 
         {showCreators ? (
-          <a
-            href="/leaderboards"
+          <button
+            type="button"
+            onClick={() => {
+              // ✅ cache-bust navigation (fixes prod stale /leaderboards)
+              window.location.assign(`/leaderboards?ts=${Date.now()}`)
+            }}
             className="block w-full text-center py-4 rounded-2xl bg-white text-black font-extrabold"
           >
             Show Results
-          </a>
+          </button>
         ) : null}
       </div>
 
@@ -139,7 +135,6 @@ export default function HomeClient({
             className={[
               'grid lg:items-start',
               'gap-6 xl:gap-7',
-              // ✅ wider than the too-narrow version (prevents early clipping)
               showCreators
                 ? 'grid-cols-[clamp(280px,20vw,340px)_minmax(0,1fr)_clamp(280px,20vw,340px)]'
                 : 'grid-cols-1',
