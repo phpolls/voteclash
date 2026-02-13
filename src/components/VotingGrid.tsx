@@ -43,7 +43,6 @@ type PresidentableUI = {
 const BUCKET = 'cards'
 const LS_PRES_KEY = 'voteclash_pres_voted'
 
-// ✅ Hardcoded age/role
 const PRES_META: Record<string, { age: number; role: string }> = {
   'duterte-sara': { age: 47, role: 'Vice President of the Philippines' },
   'hontiveros-risa': { age: 59, role: 'Senator of the Philippines' },
@@ -326,18 +325,24 @@ function Presidentables({
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-2">
           {merged.map((p) => {
             const isSelected = selectedId === p.id
+
             return (
               <button
                 key={p.id}
                 onClick={() => onPick(p.id)}
                 disabled={pending}
                 className={[
-                  'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition',
+                  'group relative overflow-hidden rounded-3xl border bg-white text-left shadow-sm',
+                  'transition-all duration-200 ease-out',
                   'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/20',
-                  isSelected ? 'border-neutral-900/40 ring-2 ring-neutral-900/20' : 'border-neutral-200',
-                  pending ? 'opacity-80' : 'hover:bg-neutral-50',
+                  pending ? 'opacity-90' : '',
                   'aspect-[4/5]',
+                  selectedId
+                    ? isSelected
+                      ? 'border-cyan-300/60 ring-2 ring-cyan-300/40 shadow-[0_0_30px_rgba(34,211,238,0.25)] scale-[1.02]'
+                      : 'opacity-35 blur-[1px] saturate-50'
+                    : 'border-neutral-200 hover:bg-neutral-50',
                 ].join(' ')}
                 style={{ minWidth: 0 }}
               >
@@ -355,10 +360,12 @@ function Presidentables({
                 </div>
 
                 <div className="relative flex h-full flex-col justify-end p-3">
-                  <div className="text-[13px] sm:text-[16px] font-semibold leading-tight text-white">
+                  {/* +50% */}
+                  <div className="text-[18px] sm:text-[22px] font-extrabold leading-tight text-white drop-shadow-md">
                     {p.name}, {p.age}
                   </div>
-                  <div className="mt-0.5 text-[11px] sm:text-sm leading-snug text-white/70">
+
+                  <div className="mt-1 text-[14px] sm:text-[16px] leading-snug text-white/80">
                     <div
                       className="whitespace-normal break-words overflow-hidden"
                       style={{
@@ -404,7 +411,7 @@ export default function VotingGrid({
   const [votingId, setVotingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // VII
+  // VII (hover/tap shallow)
   const [hoveredFollowId, setHoveredFollowId] = useState<string | null>(null)
   const [flashShallowId, setFlashShallowId] = useState<string | null>(null)
   const flashTimerRef = useRef<number | null>(null)
