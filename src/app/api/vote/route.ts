@@ -10,25 +10,42 @@ if (!supabaseUrl || !serviceRoleKey) {
 
 const admin = createClient(supabaseUrl, serviceRoleKey)
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+}
+
 export async function POST(req: Request) {
   try {
     const { winnerId } = await req.json()
 
     if (!winnerId) {
-      return NextResponse.json({ error: 'winnerId is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'winnerId is required' },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
     }
 
-    // IMPORTANT: pass the argument object (this fixes "without parameters")
     const { data, error } = await admin.rpc('increment_vote', {
       winner_id: winnerId,
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500, headers: NO_STORE_HEADERS }
+      )
     }
 
-    return NextResponse.json({ ok: true, total_votes: data }, { status: 200 })
+    return NextResponse.json(
+      { ok: true, total_votes: data },
+      { status: 200, headers: NO_STORE_HEADERS }
+    )
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Invalid JSON body' },
+      { status: 400, headers: NO_STORE_HEADERS }
+    )
   }
 }
