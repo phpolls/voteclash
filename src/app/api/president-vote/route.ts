@@ -79,10 +79,10 @@ export async function POST(req: Request) {
 
     const voterId = await getOrSetVoterId()
 
-    const { error } = await db.rpc('cast_presidential_vote', {
-      candidate_id: candidateId,
-      voter: voterId,
-    })
+    const { error } = await db.rpc('cast_presidential_vote_by_slug', {
+  candidate_slug: candidateId,
+  voter: voterId,
+})
 
     if (error) {
       const msg = (error.message || '').toLowerCase()
