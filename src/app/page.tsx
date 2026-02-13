@@ -1,3 +1,8 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
+import { unstable_noStore as noStore } from 'next/cache'
 import HomeClient from './HomeClient'
 import { db } from '@/lib/db'
 
@@ -15,6 +20,8 @@ function toPublicUrl(path?: string | null) {
 }
 
 export default async function HomePage() {
+  noStore()
+
   // Creators leaderboard (Top 20)
   let creatorsTop: SidebarRow[] = []
   try {
