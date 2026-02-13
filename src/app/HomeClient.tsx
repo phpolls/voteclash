@@ -25,23 +25,29 @@ function formatVotes(v: any) {
 function RankRow({ idx, name, votes }: { idx: number; name: string; votes: number }) {
   return (
     <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-black/20 px-2.5 py-2">
-      <div className="w-5 shrink-0 text-white/70 font-extrabold tabular-nums text-[12px] xl:text-[13px]">
-        {idx}
-      </div>
 
-      <div
+      {/* Rank — natural width (no reserved box anymore) */}
+      <span className="text-white/70 font-extrabold tabular-nums text-[12px] xl:text-[13px]">
+        {idx}
+      </span>
+
+      {/* Name — takes ALL remaining width */}
+      <span
         title={name}
         className="flex-1 min-w-0 text-white font-semibold whitespace-nowrap overflow-hidden text-[12px] xl:text-[13px] tracking-tight"
       >
         {name}
-      </div>
+      </span>
 
-      <div className="shrink-0 flex-none w-[96px] xl:w-[112px] text-right text-[12px] xl:text-[13px] font-extrabold tabular-nums text-white/85 whitespace-nowrap">
+      {/* Votes — only as wide as the number itself */}
+      <span className="text-right text-[12px] xl:text-[13px] font-extrabold tabular-nums text-white/85 whitespace-nowrap">
         {formatVotes(votes)}
-      </div>
+      </span>
+
     </div>
   )
 }
+
 
 export default function HomeClient({
   presidentables,
