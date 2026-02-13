@@ -10,26 +10,33 @@ type SidebarRow = { id: string; name: string; imgUrl?: string | null; votes: num
 
 const LS_KEY = 'voteclash_pres_voted'
 
-function formatVotes(v: number) {
-  return Number(v || 0).toLocaleString('en-US')
+function formatVotes(v: any) {
+  const n = typeof v === 'number' ? v : Number(v ?? 0)
+  return Number.isFinite(n) ? n.toLocaleString('en-US') : '0'
 }
 
+/**
+ * ✅ A (tight but safe):
+ * - gap-2 -> gap-1
+ * - rank w-6 -> w-5
+ * - px-3 -> px-2.5
+ * Rank - Name - Votes only. No scrolling. No ellipsis class.
+ */
 function RankRow({ idx, name, votes }: { idx: number; name: string; votes: number }) {
   return (
-    <div className="grid grid-cols-[28px_minmax(20ch,1fr)_max-content] items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-      {/* rank */}
-      <div className="text-white/70 font-extrabold tabular-nums">{idx}</div>
+    <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-black/20 px-2.5 py-2">
+      <div className="w-5 shrink-0 text-white/70 font-extrabold tabular-nums text-[12px] xl:text-[13px]">
+        {idx}
+      </div>
 
-      {/* ✅ name: 1 line, NO ellipsis, guaranteed room (~20 chars) */}
       <div
         title={name}
-        className="min-w-0 text-[12px] xl:text-[13px] 2xl:text-[14px] font-semibold text-white whitespace-nowrap overflow-hidden tracking-tight"
+        className="flex-1 min-w-0 text-white font-semibold whitespace-nowrap overflow-hidden text-[12px] xl:text-[13px] tracking-tight"
       >
         {name}
       </div>
 
-      {/* ✅ votes: never disappears */}
-      <div className="pl-2 text-right text-[12px] xl:text-[13px] 2xl:text-[14px] font-extrabold tabular-nums text-white/80 whitespace-nowrap">
+      <div className="shrink-0 flex-none w-[96px] xl:w-[112px] text-right text-[12px] xl:text-[13px] font-extrabold tabular-nums text-white/85 whitespace-nowrap">
         {formatVotes(votes)}
       </div>
     </div>
@@ -126,17 +133,18 @@ export default function HomeClient({
             className={[
               'grid lg:items-start',
               'gap-6 xl:gap-7',
-              // ✅ shrink leaderboards so center expands (fixes stretched cards on laptops)
+              // ✅ wider than the too-narrow version (prevents early clipping)
               showCreators
-                ? 'grid-cols-[clamp(220px,16vw,290px)_minmax(0,1fr)_clamp(220px,16vw,290px)]'
+                ? 'grid-cols-[clamp(280px,20vw,340px)_minmax(0,1fr)_clamp(280px,20vw,340px)]'
                 : 'grid-cols-1',
             ].join(' ')}
           >
-            {/* LEFT SIDEBAR */}
             {showCreators ? (
               <div className="lg:sticky lg:top-4 self-start">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-3 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-3">Presidentiables Ranking</div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
+                  <div className="text-white font-extrabold tracking-tight mb-3">
+                    Presidentiables Ranking
+                  </div>
                   <div className="space-y-2">
                     {presidentiablesTop.slice(0, 20).map((p, i) => (
                       <RankRow key={p.id} idx={i + 1} name={p.name} votes={p.votes} />
@@ -146,7 +154,6 @@ export default function HomeClient({
               </div>
             ) : null}
 
-            {/* CENTER */}
             <div className="flex flex-col gap-3">
               <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-2 shadow-lg backdrop-blur">
                 <div className="flex items-start justify-between gap-4">
@@ -193,10 +200,9 @@ export default function HomeClient({
               ) : null}
             </div>
 
-            {/* RIGHT SIDEBAR */}
             {showCreators ? (
               <div className="lg:sticky lg:top-4 self-start">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-3 shadow-lg backdrop-blur">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
                   <div className="text-white font-extrabold tracking-tight mb-3">Leaderboard</div>
                   <div className="space-y-2">
                     {creatorsTop.slice(0, 20).map((c, i) => (
