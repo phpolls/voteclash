@@ -214,7 +214,7 @@ function VotesBadge({ votes }: { votes: number }) {
 function CreatorCard({
   c,
   onVote,
-  voting,
+  loadingThisButton,
   buttonLabel,
   pulse,
   onHoverEnter,
@@ -222,7 +222,7 @@ function CreatorCard({
 }: {
   c: Creator
   onVote: () => void
-  voting: boolean
+  loadingThisButton: boolean
   buttonLabel: 'FOLLOW' | 'SHALLOW'
   pulse: boolean
   onHoverEnter: () => void
@@ -249,7 +249,7 @@ function CreatorCard({
         <QuoteBlock quote={c.quote} />
 
         <button
-          disabled={voting}
+          disabled={loadingThisButton}
           onClick={onVote}
           onMouseEnter={onHoverEnter}
           onMouseLeave={onHoverLeave}
@@ -262,7 +262,7 @@ function CreatorCard({
             pulse ? 'animate-pulse scale-[1.03]' : '',
           ].join(' ')}
         >
-          {voting ? 'FOLLOWING...' : buttonLabel}
+          {loadingThisButton ? 'FOLLOWING...' : buttonLabel}
         </button>
       </div>
     </div>
@@ -401,12 +401,12 @@ export default function VotingGrid({
   const [left, setLeft] = useState<Creator | null>(null)
   const [right, setRight] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
-  const [voting, setVoting] = useState(false)
+  const [votingId, setVotingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // VII
-  const [hoveredFollowId, setHoveredFollowId] = useState<string | null>(null) // desktop hover
-  const [flashShallowId, setFlashShallowId] = useState<string | null>(null) // mobile click flash
+  const [hoveredFollowId, setHoveredFollowId] = useState<string | null>(null)
+  const [flashShallowId, setFlashShallowId] = useState<string | null>(null)
   const flashTimerRef = useRef<number | null>(null)
 
   function flashOther(otherId: string) {
@@ -472,9 +472,9 @@ export default function VotingGrid({
   }, [presVoteDone])
 
   async function voteCreator(winnerId: string) {
-    if (!left || !right || voting) return
+    if (!left || !right || votingId) return
 
-    setVoting(true)
+    setVotingId(winnerId)
     setError(null)
 
     try {
@@ -494,7 +494,7 @@ export default function VotingGrid({
     } catch (e: any) {
       setError(e?.message || 'Vote failed')
     } finally {
-      setVoting(false)
+      setVotingId(null)
       setHoveredFollowId(null)
       setFlashShallowId(null)
     }
@@ -524,10 +524,10 @@ export default function VotingGrid({
   }
 
   function labelFor(selfId: string, otherId: string) {
-    const shallowByHover = hoveredFollowId === otherId // if I hover other -> you become shallow
+    const shallowByHover = hoveredFollowId === otherId
     const shallowByFlash = flashShallowId === selfId
     const shallow = shallowByHover || shallowByFlash
-    return { label: (shallow ? 'SHALLOW' : 'FOLLOW') as 'FOLLOW' | 'SHALLOW', pulse: shallow && !voting }
+    return { label: (shallow ? 'SHALLOW' : 'FOLLOW') as 'FOLLOW' | 'SHALLOW', pulse: shallow && !votingId }
   }
 
   if (!hydrated) return null
@@ -558,13 +558,12 @@ export default function VotingGrid({
       <div className="lg:hidden space-y-3">
         <CreatorCard
           c={left}
-          voting={voting}
+          loadingThisButton={votingId === left.id}
           buttonLabel={leftBtn.label}
           pulse={leftBtn.pulse}
           onHoverEnter={() => {}}
           onHoverLeave={() => {}}
           onVote={() => {
-            // mobile: after tapping follow, other flashes shallow
             flashOther(right.id)
             voteCreator(left.id)
           }}
@@ -578,7 +577,7 @@ export default function VotingGrid({
 
         <CreatorCard
           c={right}
-          voting={voting}
+          loadingThisButton={votingId === right.id}
           buttonLabel={rightBtn.label}
           pulse={rightBtn.pulse}
           onHoverEnter={() => {}}
@@ -595,7 +594,7 @@ export default function VotingGrid({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <CreatorCard
             c={left}
-            voting={voting}
+            loadingThisButton={votingId === left.id}
             buttonLabel={leftBtn.label}
             pulse={leftBtn.pulse}
             onHoverEnter={() => setHoveredFollowId(left.id)}
@@ -604,7 +603,7 @@ export default function VotingGrid({
           />
           <CreatorCard
             c={right}
-            voting={voting}
+            loadingThisButton={votingId === right.id}
             buttonLabel={rightBtn.label}
             pulse={rightBtn.pulse}
             onHoverEnter={() => setHoveredFollowId(right.id)}
