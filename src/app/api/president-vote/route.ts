@@ -29,30 +29,25 @@ async function getOrSetVoterId() {
 }
 
 async function verifyTurnstile(tsToken: string) {
-  if (!TURNSTILE_SECRET_KEY) return { ok: false, reason: 'missing_secret' as const }
+  if (!TURNSTILE_SECRET_KEY) return false
 
-  try {
-    const form = new FormData()
-    form.append('secret', TURNSTILE_SECRET_KEY)
-    form.append('response', tsToken)
+  const form = new FormData()
+  form.append('secret', TURNSTILE_SECRET_KEY)
+  form.append('response', tsToken)
 
-    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: form,
-    })
+  const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: form,
+  })
 
-    const data = (await r.json()) as { success?: boolean; ['error-codes']?: string[] }
-    if (!data?.success) return { ok: false, reason: 'failed' as const, codes: data?.['error-codes'] ?? [] }
-    return { ok: true as const }
-  } catch (e: any) {
-    return { ok: false, reason: 'verify_error' as const, msg: String(e?.message || e) }
-  }
+  const data = (await r.json()) as { success?: boolean }
+  return !!data?.success
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null)
-    const candidateSlug = String(body?.candidateId ?? '').trim() // slug like "pacquiao-manny"
+    const candidateSlug = String(body?.candidateId ?? '').trim()
     const tsToken = String(body?.tsToken ?? '').trim()
 
     if (!candidateSlug) {
@@ -62,37 +57,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Missing tsToken' }, { status: 400, headers: NO_STORE_HEADERS })
     }
 
-    const cap = await verifyTurnstile(tsToken)
-    if (!cap.ok) {
-      return NextResponse.json(
-        { ok: false, captchaFailed: true, reason: cap.reason, codes: (cap as any).codes ?? undefined },
-        { status: 400, headers: NO_STORE_HEADERS }
-      )
+    const ok = await verifyTurnstile(tsToken)
+    if (!ok) {
+      return NextResponse.json({ ok: false, captchaFailed: true }, { status: 400, headers: NO_STORE_HEADERS })
     }
 
     const voterId = await getOrSetVoterId()
 
-    // 1) slug -> uuid
-    const { data: pres, error: presErr } = await db
+    // ✅ 1) Check candidate exists (slug-based)
+    const { data: cand, error: candErr } = await db
       .from('Presidentiables')
-      .select('id')
+      .select('slug')
       .eq('slug', candidateSlug)
       .single()
 
-    if (presErr || !pres?.id) {
+    if (candErr || !cand?.slug) {
       return NextResponse.json(
         { ok: false, error: `Candidate not found for slug: ${candidateSlug}` },
         { status: 400, headers: NO_STORE_HEADERS }
       )
     }
 
-    const candidateUuid = String(pres.id)
-
-    // 2) one-vote-only insert (requires UNIQUE constraint on votes)
-    const { error: voteErr } = await db.from('votes').insert({
-      contest: 'presidential',
+    // ✅ 2) Insert ONE vote only (PK voter_id blocks repeats)
+    const { error: voteErr } = await db.from('presidential_votes').insert({
       voter_id: voterId,
-      choice_id: candidateUuid,
+      candidate_slug: candidateSlug,
     })
 
     if (voteErr) {
@@ -104,10 +93,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: voteErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
-    // 3) increment total votes (uuid)
-    const { error: incErr } = await db.rpc('increment_presidentiables_vote', { candidate_id: candidateUuid })
-    if (incErr) {
-      return NextResponse.json({ ok: false, error: incErr.message }, { status: 500, headers: NO_STORE_HEADERS })
+    // ✅ 3) Increment totals by slug (no UUID anywhere)
+    const { error: upErr } = await db.rpc('increment_presidentiables_vote_by_slug', {
+      candidate_slug: candidateSlug,
+    })
+
+    if (upErr) {
+      return NextResponse.json({ ok: false, error: upErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
     return NextResponse.json({ ok: true }, { status: 200, headers: NO_STORE_HEADERS })
