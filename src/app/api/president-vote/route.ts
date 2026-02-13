@@ -47,10 +47,10 @@ async function verifyTurnstile(tsToken: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null)
-    const candidateId = String(body?.candidateId ?? '').trim()
+    const candidateSlug = String(body?.candidateId ?? '').trim() // your UI sends slug here
     const tsToken = String(body?.tsToken ?? '').trim()
 
-    if (!candidateId) {
+    if (!candidateSlug) {
       return NextResponse.json({ ok: false, error: 'Missing candidateId' }, { status: 400, headers: NO_STORE_HEADERS })
     }
     if (!tsToken) {
@@ -64,19 +64,48 @@ export async function POST(req: Request) {
 
     const voterId = await getOrSetVoterId()
 
-    // ✅ CALL THE NEW FUNCTION NAME (NO UUID CAST POSSIBILITY)
-    const { error } = await db.rpc('cast_presidential_vote_by_slug', {
-      candidate_slug: candidateId,
-      voter: voterId,
+    // ✅ 1) Convert slug -> UUID here (no more uuid casting errors)
+    const { data: pres, error: presErr } = await db
+      .from('Presidentiables')
+      .select('id')
+      .eq('slug', candidateSlug)
+      .single()
+
+    if (presErr || !pres?.id) {
+      return NextResponse.json(
+        { ok: false, error: `Candidate not found for slug: ${candidateSlug}` },
+        { status: 400, headers: NO_STORE_HEADERS }
+      )
+    }
+
+    const candidateUuid = String(pres.id)
+
+    // ✅ 2) Enforce one-vote-only using your votes table
+    // This assumes you have a UNIQUE constraint like: unique(contest, voter_id)
+    const { error: voteErr } = await db.from('votes').insert({
+      contest: 'presidential',
+      voter_id: voterId,
+      choice_id: candidateUuid,
     })
 
-    if (error) {
-      const msg = (error.message || '').toLowerCase()
+    if (voteErr) {
+      const msg = (voteErr.message || '').toLowerCase()
       const already = msg.includes('duplicate') || msg.includes('unique')
       if (already) {
         return NextResponse.json({ ok: false, alreadyVoted: true }, { status: 200, headers: NO_STORE_HEADERS })
       }
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500, headers: NO_STORE_HEADERS })
+      return NextResponse.json({ ok: false, error: voteErr.message }, { status: 500, headers: NO_STORE_HEADERS })
+    }
+
+    // ✅ 3) Increment total_votes using UUID
+    // Use your existing RPC that expects UUID:
+    // db.rpc('increment_presidentiables_vote', { candidate_id: <uuid> })
+    const { error: incErr } = await db.rpc('increment_presidentiables_vote', {
+      candidate_id: candidateUuid,
+    })
+
+    if (incErr) {
+      return NextResponse.json({ ok: false, error: incErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
     return NextResponse.json({ ok: true }, { status: 200, headers: NO_STORE_HEADERS })
