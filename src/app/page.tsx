@@ -20,6 +20,7 @@ function toPublicUrl(path?: string | null) {
 }
 
 export default async function HomePage() {
+  // 🔴 THIS disables Next/Vercel caching in production
   noStore()
 
   // Creators leaderboard (Top 20)
@@ -44,7 +45,7 @@ export default async function HomePage() {
     creatorsTop = []
   }
 
-  // Presidentiables list for homepage cards (photos, sorted by name)
+  // Presidentiables list (cards)
   let presidentables: PresidentableUI[] = []
   try {
     const { data, error } = await db
