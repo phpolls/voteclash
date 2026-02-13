@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { cookies, headers } from 'next/headers'
-import { randomUUID, createHash } from 'crypto'
+import { cookies } from 'next/headers'
+import { randomUUID } from 'crypto'
 import { db } from '@/lib/db'
 
 const COOKIE_NAME = 'a2h_voter_id'
-const MAX_PER_IP_PER_DAY = 5
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY as string
 
-const IP_HASH_SALT = process.env.IP_HASH_SALT as string
-if (!IP_HASH_SALT) {
-  throw new Error('Missing env: IP_HASH_SALT')
+if (!TURNSTILE_SECRET_KEY) {
+  throw new Error('Missing env: TURNSTILE_SECRET_KEY')
 }
 
 const NO_STORE_HEADERS = {
@@ -33,60 +32,43 @@ async function getOrSetVoterId() {
   return voterId
 }
 
-function getClientIp(): string {
-  const h = headers()
+async function verifyTurnstile(tsToken: string) {
+  const form = new FormData()
+  form.append('secret', TURNSTILE_SECRET_KEY)
+  form.append('response', tsToken)
 
-  const vercel = h.get('x-vercel-forwarded-for')
-  if (vercel) return vercel.split(',')[0].trim()
+  const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: form,
+  })
 
-  const xff = h.get('x-forwarded-for')
-  if (xff) return xff.split(',')[0].trim()
-
-  const real = h.get('x-real-ip')
-  if (real) return real.trim()
-
-  return 'unknown'
-}
-
-function hashIp(ip: string) {
-  return createHash('sha256').update(`${IP_HASH_SALT}:${ip}`).digest('hex')
+  const data = (await r.json()) as { success?: boolean }
+  return !!data.success
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null)
     const candidateId = String(body?.candidateId ?? '').trim()
+    const tsToken = String(body?.tsToken ?? '').trim()
+
     if (!candidateId) {
       return new NextResponse('Missing candidateId', { status: 400, headers: NO_STORE_HEADERS })
     }
-
-    // ✅ Incognito defense: cap presidential votes per IP per day (shared across Vercel instances)
-    const ip = getClientIp()
-    const ipHash = hashIp(ip)
-
-    const { data: allowed, error: capErr } = await db.rpc('check_and_bump_pres_ip_cap', {
-      p_ip_hash: ipHash,
-      p_limit: MAX_PER_IP_PER_DAY,
-    })
-
-    if (capErr) {
-      return new NextResponse(capErr.message, { status: 500, headers: NO_STORE_HEADERS })
+    if (!tsToken) {
+      return new NextResponse('Missing tsToken', { status: 400, headers: NO_STORE_HEADERS })
     }
 
-    if (!allowed) {
+    const ok = await verifyTurnstile(tsToken)
+    if (!ok) {
       return NextResponse.json(
-        {
-          ok: false,
-          rateLimited: true,
-          message: 'Too many presidential votes from this network today. Try again tomorrow.',
-        },
-        { status: 429, headers: NO_STORE_HEADERS }
+        { ok: false, captchaFailed: true },
+        { status: 400, headers: NO_STORE_HEADERS }
       )
     }
 
     const voterId = await getOrSetVoterId()
 
-    // ✅ Hard one-vote-only enforcement (unique index in votes table)
     const { error } = await db.rpc('cast_presidential_vote', {
       candidate_id: candidateId,
       voter: voterId,
@@ -94,18 +76,13 @@ export async function POST(req: Request) {
 
     if (error) {
       const msg = (error.message || '').toLowerCase()
-      const already =
-        msg.includes('duplicate') ||
-        msg.includes('unique') ||
-        msg.includes('votes_one_presidential_per_voter')
-
+      const already = msg.includes('duplicate') || msg.includes('unique')
       if (already) {
         return NextResponse.json(
           { ok: false, alreadyVoted: true },
           { status: 200, headers: NO_STORE_HEADERS }
         )
       }
-
       return new NextResponse(error.message, { status: 500, headers: NO_STORE_HEADERS })
     }
 

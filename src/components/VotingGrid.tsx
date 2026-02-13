@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import Script from 'next/script'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -360,7 +361,6 @@ function Presidentables({
                 </div>
 
                 <div className="relative flex h-full flex-col justify-end p-3">
-                  {/* +50% */}
                   <div className="text-[18px] sm:text-[22px] font-extrabold leading-tight text-white drop-shadow-md">
                     {p.name}, {p.age}
                   </div>
@@ -400,6 +400,13 @@ export default function VotingGrid({
 
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => setHydrated(true), [])
+
+  // Turnstile token
+  const [tsToken, setTsToken] = useState<string>('')
+
+  useEffect(() => {
+    ;(window as any).__a2hTsOk = (token: string) => setTsToken(token)
+  }, [])
 
   const [presVoteDone, setPresVoteDone] = useState(false)
   const [presVotePending, setPresVotePending] = useState(false)
@@ -509,6 +516,8 @@ export default function VotingGrid({
 
   async function pickPresident(id: string) {
     if (presVoteDone || presVotePending) return
+    if (!tsToken) return
+
     setSelectedPresidentId(id)
     setPresVotePending(true)
 
@@ -516,8 +525,10 @@ export default function VotingGrid({
       await fetch('/api/president-vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidateId: id }),
-      }).catch(() => null)
+        body: JSON.stringify({ candidateId: id, tsToken }),
+      })
+
+      setTsToken('')
 
       try {
         localStorage.setItem(LS_PRES_KEY, '1')
@@ -541,7 +552,18 @@ export default function VotingGrid({
 
   if (!presVoteDone) {
     return (
-      <div className="w-full">
+      <div className="w-full space-y-3">
+        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+
+        <div className="flex justify-center">
+          <div
+            className="cf-turnstile"
+            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            data-callback="__a2hTsOk"
+            data-theme="dark"
+          />
+        </div>
+
         <Presidentables
           presidentables={presidentables}
           onPick={pickPresident}
