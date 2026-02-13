@@ -16,10 +16,20 @@ function formatVotes(v: number) {
 
 function RankRow({ idx, name, votes }: { idx: number; name: string; votes: number }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
-      <div className="w-6 shrink-0 text-white/70 font-extrabold tabular-nums">{idx}</div>
-      <div className="flex-1 text-[11px] font-semibold text-white whitespace-nowrap">{name}</div>
-      <div className="shrink-0 w-[92px] text-right text-[11px] font-extrabold tabular-nums text-white/80 whitespace-nowrap">
+    <div className="grid grid-cols-[28px_minmax(20ch,1fr)_max-content] items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+      {/* rank */}
+      <div className="text-white/70 font-extrabold tabular-nums">{idx}</div>
+
+      {/* ✅ name: 1 line, NO ellipsis, guaranteed room (~20 chars) */}
+      <div
+        title={name}
+        className="min-w-0 text-[12px] xl:text-[13px] 2xl:text-[14px] font-semibold text-white whitespace-nowrap overflow-hidden tracking-tight"
+      >
+        {name}
+      </div>
+
+      {/* ✅ votes: never disappears */}
+      <div className="pl-2 text-right text-[12px] xl:text-[13px] 2xl:text-[14px] font-extrabold tabular-nums text-white/80 whitespace-nowrap">
         {formatVotes(votes)}
       </div>
     </div>
@@ -89,7 +99,6 @@ export default function HomeClient({
               )}
             </div>
 
-            {/* ✅ Share (mobile) */}
             <div className="shrink-0">
               <ShareFacebookButton className="px-3 py-2" />
             </div>
@@ -115,16 +124,19 @@ export default function HomeClient({
         <div className="mx-auto max-w-[1600px] px-6 pt-4 pb-6">
           <div
             className={[
-              'grid gap-8 lg:items-start',
-              showCreators ? 'grid-cols-[360px_1fr_360px]' : 'grid-cols-1',
+              'grid lg:items-start',
+              'gap-6 xl:gap-7',
+              // ✅ shrink leaderboards so center expands (fixes stretched cards on laptops)
+              showCreators
+                ? 'grid-cols-[clamp(220px,16vw,290px)_minmax(0,1fr)_clamp(220px,16vw,290px)]'
+                : 'grid-cols-1',
             ].join(' ')}
           >
+            {/* LEFT SIDEBAR */}
             {showCreators ? (
               <div className="lg:sticky lg:top-4 self-start">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-                  <div className="text-white font-extrabold tracking-tight mb-3">
-                    Presidentiables Ranking
-                  </div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-3 shadow-lg backdrop-blur">
+                  <div className="text-white font-extrabold tracking-tight mb-3">Presidentiables Ranking</div>
                   <div className="space-y-2">
                     {presidentiablesTop.slice(0, 20).map((p, i) => (
                       <RankRow key={p.id} idx={i + 1} name={p.name} votes={p.votes} />
@@ -134,6 +146,7 @@ export default function HomeClient({
               </div>
             ) : null}
 
+            {/* CENTER */}
             <div className="flex flex-col gap-3">
               <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-2 shadow-lg backdrop-blur">
                 <div className="flex items-start justify-between gap-4">
@@ -162,7 +175,6 @@ export default function HomeClient({
                     )}
                   </div>
 
-                  {/* ✅ Share (web) */}
                   <div className="shrink-0 pt-1">
                     <ShareFacebookButton />
                   </div>
@@ -181,9 +193,10 @@ export default function HomeClient({
               ) : null}
             </div>
 
+            {/* RIGHT SIDEBAR */}
             {showCreators ? (
               <div className="lg:sticky lg:top-4 self-start">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-3 shadow-lg backdrop-blur">
                   <div className="text-white font-extrabold tracking-tight mb-3">Leaderboard</div>
                   <div className="space-y-2">
                     {creatorsTop.slice(0, 20).map((c, i) => (
