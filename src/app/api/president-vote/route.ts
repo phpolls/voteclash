@@ -29,26 +29,19 @@ async function getOrSetVoterId() {
 }
 
 async function verifyTurnstile(tsToken: string) {
-  if (!TURNSTILE_SECRET_KEY) return { success: false, reason: 'missing_secret' as const }
+  if (!TURNSTILE_SECRET_KEY) return false
 
-  try {
-    const form = new FormData()
-    form.append('secret', TURNSTILE_SECRET_KEY)
-    form.append('response', tsToken)
+  const form = new FormData()
+  form.append('secret', TURNSTILE_SECRET_KEY)
+  form.append('response', tsToken)
 
-    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: form,
-    })
+  const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    body: form,
+  })
 
-    const data = (await r.json()) as { success?: boolean; ['error-codes']?: string[] }
-    if (!data?.success) {
-      return { success: false, reason: 'failed' as const, codes: data?.['error-codes'] ?? [] }
-    }
-    return { success: true as const }
-  } catch (e: any) {
-    return { success: false, reason: 'verify_error' as const, msg: String(e?.message || e) }
-  }
+  const data = (await r.json()) as { success?: boolean }
+  return !!data?.success
 }
 
 export async function POST(req: Request) {
@@ -64,25 +57,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Missing tsToken' }, { status: 400, headers: NO_STORE_HEADERS })
     }
 
-    const cap = await verifyTurnstile(tsToken)
-    if (!cap.success) {
-      return NextResponse.json(
-        {
-          ok: false,
-          captchaFailed: true,
-          reason: cap.reason,
-          codes: (cap as any).codes ?? undefined,
-        },
-        { status: 400, headers: NO_STORE_HEADERS }
-      )
+    const ok = await verifyTurnstile(tsToken)
+    if (!ok) {
+      return NextResponse.json({ ok: false, captchaFailed: true }, { status: 400, headers: NO_STORE_HEADERS })
     }
 
     const voterId = await getOrSetVoterId()
 
+    // ✅ CALL THE NEW FUNCTION NAME (NO UUID CAST POSSIBILITY)
     const { error } = await db.rpc('cast_presidential_vote_by_slug', {
-  candidate_slug: candidateId,
-  voter: voterId,
-})
+      candidate_slug: candidateId,
+      voter: voterId,
+    })
 
     if (error) {
       const msg = (error.message || '').toLowerCase()
