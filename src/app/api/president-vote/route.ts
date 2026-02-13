@@ -17,8 +17,8 @@ const NO_STORE_HEADERS = {
   Expires: '0',
 }
 
-function getOrSetVoterId() {
-  const jar = cookies()
+async function getOrSetVoterId() {
+  const jar = await cookies()
   const existing = jar.get(COOKIE_NAME)?.value
   if (existing) return existing
 
@@ -28,7 +28,7 @@ function getOrSetVoterId() {
     secure: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 365, // 1 year
+    maxAge: 60 * 60 * 24 * 365,
   })
   return voterId
 }
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const voterId = getOrSetVoterId()
+    const voterId = await getOrSetVoterId()
 
     // ✅ Hard one-vote-only enforcement (unique index in votes table)
     const { error } = await db.rpc('cast_presidential_vote', {
