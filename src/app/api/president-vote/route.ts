@@ -42,14 +42,12 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => null)
     const candidateSlug = String(body?.candidateId ?? '').trim()
+
     if (!candidateSlug) {
-      return NextResponse.json(
-        { ok: false, error: 'Missing candidateId' },
-        { status: 400, headers: NO_STORE_HEADERS }
-      )
+      return NextResponse.json({ ok: false, error: 'Missing candidateId' }, { status: 400, headers: NO_STORE_HEADERS })
     }
 
-    // 1) Candidate must exist
+    // Candidate must exist
     const { data: cand, error: candErr } = await db
       .from('Presidentiables')
       .select('slug')
@@ -63,57 +61,39 @@ export async function POST(req: Request) {
       )
     }
 
-    // 2) IP cap (works even in incognito / cookie-blocking browsers)
-    const ip = getClientIp()
-    const ipHash = hashIp(ip)
-
+    // IP cap
+    const ipHash = hashIp(getClientIp())
     const { data: allowed, error: capErr } = await db.rpc('check_and_bump_pres_ip_cap', {
       p_ip_hash: ipHash,
       p_limit: MAX_PER_IP_PER_DAY,
     })
 
     if (capErr) {
-      return NextResponse.json(
-        { ok: false, error: capErr.message },
-        { status: 500, headers: NO_STORE_HEADERS }
-      )
+      return NextResponse.json({ ok: false, error: capErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
     if (!allowed) {
       return NextResponse.json(
-        {
-          ok: false,
-          rateLimited: true,
-          limit: MAX_PER_IP_PER_DAY,
-          message: `Too many presidential votes from this network today (${MAX_PER_IP_PER_DAY}/day).`,
-        },
+        { ok: false, rateLimited: true, message: `Too many presidential votes from this network today (${MAX_PER_IP_PER_DAY}/day).` },
         { status: 429, headers: NO_STORE_HEADERS }
       )
     }
 
-    // 3) Log (so you can monitor/rollback)
+    // Log vote (monitor/rollback)
     const { error: logErr } = await db.from('presidential_vote_log').insert({
       ip_hash: ipHash,
       candidate_slug: candidateSlug,
     })
-
     if (logErr) {
-      return NextResponse.json(
-        { ok: false, error: logErr.message },
-        { status: 500, headers: NO_STORE_HEADERS }
-      )
+      return NextResponse.json({ ok: false, error: logErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
-    // 4) Increment totals
+    // Increment totals
     const { error: upErr } = await db.rpc('increment_presidentiables_vote_by_slug', {
       candidate_slug: candidateSlug,
     })
-
     if (upErr) {
-      return NextResponse.json(
-        { ok: false, error: upErr.message },
-        { status: 500, headers: NO_STORE_HEADERS }
-      )
+      return NextResponse.json({ ok: false, error: upErr.message }, { status: 500, headers: NO_STORE_HEADERS })
     }
 
     return NextResponse.json({ ok: true }, { status: 200, headers: NO_STORE_HEADERS })
